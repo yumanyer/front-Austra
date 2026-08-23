@@ -1,0 +1,36 @@
+import assert from "node:assert/strict";
+import { normalizeMarket, normalizeOracle } from "../js/api.js";
+
+const oracle = normalizeOracle({
+  price: 42.315,
+  ema: 42.301,
+  lastPrint: 42.32,
+  bid: 42.3,
+  ask: 42.34,
+  spread: 0.04,
+  ccl: 1180,
+  status: "VALID",
+  source: "Data912",
+  marketOpen: true,
+  circuitBreaker: { status: "CLEAR", threshold: 10, deviation: 1.8, releaseTicks: "3 / 3" },
+});
+assert.equal(oracle.price, 42.315);
+assert.equal(oracle.ema, 42.301);
+assert.equal(oracle.circuitBreaker.status, "CLEAR");
+assert.equal(oracle.source, "Data912");
+
+const market = normalizeMarket({
+  markPrice: 42.32,
+  indexPrice: 42.315,
+  fundingRate: 0.01,
+  maxLeverage: 5,
+  marketStatus: "LIVE",
+  hip3Status: "ACTIVE",
+  series: [{ timestamp: "2026-08-23T00:00:00Z", price: 42.1, ema: 42.0 }],
+});
+assert.equal(market.markPrice, 42.32);
+assert.equal(market.indexPrice, 42.315);
+assert.equal(market.history.length, 1);
+assert.equal(market.volume24h, undefined);
+
+console.log("AustralFinance API normalization smoke test passed");

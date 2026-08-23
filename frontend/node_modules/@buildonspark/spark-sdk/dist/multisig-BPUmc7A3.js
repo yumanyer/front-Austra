@@ -1,0 +1,202 @@
+import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
+
+//#region src/proto/multisig.ts
+function createBaseMultisigConfig() {
+	return {
+		version: 0,
+		threshold: 0,
+		publicKeys: []
+	};
+}
+const MultisigConfig = {
+	encode(message, writer = new BinaryWriter()) {
+		if (message.version !== 0) writer.uint32(8).uint32(message.version);
+		if (message.threshold !== 0) writer.uint32(16).uint32(message.threshold);
+		for (const v of message.publicKeys) writer.uint32(26).bytes(v);
+		return writer;
+	},
+	decode(input, length) {
+		const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+		const end = length === void 0 ? reader.len : reader.pos + length;
+		const message = createBaseMultisigConfig();
+		while (reader.pos < end) {
+			const tag = reader.uint32();
+			switch (tag >>> 3) {
+				case 1:
+					if (tag !== 8) break;
+					message.version = reader.uint32();
+					continue;
+				case 2:
+					if (tag !== 16) break;
+					message.threshold = reader.uint32();
+					continue;
+				case 3:
+					if (tag !== 26) break;
+					message.publicKeys.push(reader.bytes());
+					continue;
+			}
+			if ((tag & 7) === 4 || tag === 0) break;
+			reader.skip(tag & 7);
+		}
+		return message;
+	},
+	fromJSON(object) {
+		return {
+			version: isSet(object.version) ? globalThis.Number(object.version) : 0,
+			threshold: isSet(object.threshold) ? globalThis.Number(object.threshold) : 0,
+			publicKeys: globalThis.Array.isArray(object?.publicKeys) ? object.publicKeys.map((e) => bytesFromBase64(e)) : []
+		};
+	},
+	toJSON(message) {
+		const obj = {};
+		if (message.version !== 0) obj.version = Math.round(message.version);
+		if (message.threshold !== 0) obj.threshold = Math.round(message.threshold);
+		if (message.publicKeys?.length) obj.publicKeys = message.publicKeys.map((e) => base64FromBytes(e));
+		return obj;
+	},
+	create(base) {
+		return MultisigConfig.fromPartial(base ?? {});
+	},
+	fromPartial(object) {
+		const message = createBaseMultisigConfig();
+		message.version = object.version ?? 0;
+		message.threshold = object.threshold ?? 0;
+		message.publicKeys = object.publicKeys?.map((e) => e) || [];
+		return message;
+	}
+};
+function createBaseKeyedSignature() {
+	return {
+		publicKey: new Uint8Array(0),
+		signature: new Uint8Array(0)
+	};
+}
+const KeyedSignature = {
+	encode(message, writer = new BinaryWriter()) {
+		if (message.publicKey.length !== 0) writer.uint32(10).bytes(message.publicKey);
+		if (message.signature.length !== 0) writer.uint32(18).bytes(message.signature);
+		return writer;
+	},
+	decode(input, length) {
+		const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+		const end = length === void 0 ? reader.len : reader.pos + length;
+		const message = createBaseKeyedSignature();
+		while (reader.pos < end) {
+			const tag = reader.uint32();
+			switch (tag >>> 3) {
+				case 1:
+					if (tag !== 10) break;
+					message.publicKey = reader.bytes();
+					continue;
+				case 2:
+					if (tag !== 18) break;
+					message.signature = reader.bytes();
+					continue;
+			}
+			if ((tag & 7) === 4 || tag === 0) break;
+			reader.skip(tag & 7);
+		}
+		return message;
+	},
+	fromJSON(object) {
+		return {
+			publicKey: isSet(object.publicKey) ? bytesFromBase64(object.publicKey) : new Uint8Array(0),
+			signature: isSet(object.signature) ? bytesFromBase64(object.signature) : new Uint8Array(0)
+		};
+	},
+	toJSON(message) {
+		const obj = {};
+		if (message.publicKey.length !== 0) obj.publicKey = base64FromBytes(message.publicKey);
+		if (message.signature.length !== 0) obj.signature = base64FromBytes(message.signature);
+		return obj;
+	},
+	create(base) {
+		return KeyedSignature.fromPartial(base ?? {});
+	},
+	fromPartial(object) {
+		const message = createBaseKeyedSignature();
+		message.publicKey = object.publicKey ?? new Uint8Array(0);
+		message.signature = object.signature ?? new Uint8Array(0);
+		return message;
+	}
+};
+function createBaseMultisigSignatureSet() {
+	return {
+		multisigConfig: void 0,
+		signatures: []
+	};
+}
+const MultisigSignatureSet = {
+	encode(message, writer = new BinaryWriter()) {
+		if (message.multisigConfig !== void 0) MultisigConfig.encode(message.multisigConfig, writer.uint32(10).fork()).join();
+		for (const v of message.signatures) KeyedSignature.encode(v, writer.uint32(18).fork()).join();
+		return writer;
+	},
+	decode(input, length) {
+		const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+		const end = length === void 0 ? reader.len : reader.pos + length;
+		const message = createBaseMultisigSignatureSet();
+		while (reader.pos < end) {
+			const tag = reader.uint32();
+			switch (tag >>> 3) {
+				case 1:
+					if (tag !== 10) break;
+					message.multisigConfig = MultisigConfig.decode(reader, reader.uint32());
+					continue;
+				case 2:
+					if (tag !== 18) break;
+					message.signatures.push(KeyedSignature.decode(reader, reader.uint32()));
+					continue;
+			}
+			if ((tag & 7) === 4 || tag === 0) break;
+			reader.skip(tag & 7);
+		}
+		return message;
+	},
+	fromJSON(object) {
+		return {
+			multisigConfig: isSet(object.multisigConfig) ? MultisigConfig.fromJSON(object.multisigConfig) : void 0,
+			signatures: globalThis.Array.isArray(object?.signatures) ? object.signatures.map((e) => KeyedSignature.fromJSON(e)) : []
+		};
+	},
+	toJSON(message) {
+		const obj = {};
+		if (message.multisigConfig !== void 0) obj.multisigConfig = MultisigConfig.toJSON(message.multisigConfig);
+		if (message.signatures?.length) obj.signatures = message.signatures.map((e) => KeyedSignature.toJSON(e));
+		return obj;
+	},
+	create(base) {
+		return MultisigSignatureSet.fromPartial(base ?? {});
+	},
+	fromPartial(object) {
+		const message = createBaseMultisigSignatureSet();
+		message.multisigConfig = object.multisigConfig !== void 0 && object.multisigConfig !== null ? MultisigConfig.fromPartial(object.multisigConfig) : void 0;
+		message.signatures = object.signatures?.map((e) => KeyedSignature.fromPartial(e)) || [];
+		return message;
+	}
+};
+function bytesFromBase64(b64) {
+	if (globalThis.Buffer) return Uint8Array.from(globalThis.Buffer.from(b64, "base64"));
+	else {
+		const bin = globalThis.atob(b64);
+		const arr = new Uint8Array(bin.length);
+		for (let i = 0; i < bin.length; ++i) arr[i] = bin.charCodeAt(i);
+		return arr;
+	}
+}
+function base64FromBytes(arr) {
+	if (globalThis.Buffer) return globalThis.Buffer.from(arr).toString("base64");
+	else {
+		const bin = [];
+		arr.forEach((byte) => {
+			bin.push(globalThis.String.fromCharCode(byte));
+		});
+		return globalThis.btoa(bin.join(""));
+	}
+}
+function isSet(value) {
+	return value !== null && value !== void 0;
+}
+
+//#endregion
+export { MultisigSignatureSet as n, KeyedSignature as t };

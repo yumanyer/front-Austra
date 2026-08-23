@@ -1,0 +1,136 @@
+/* Infra domain specific styles */
+
+/* Infra hero */
+.infra-hero { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 1.25rem; margin-bottom: 1.25rem; }
+
+/* Infra diagram */
+.infra-diagram { min-height: 430px; overflow: hidden; }
+
+/* Infra diagram body */
+.infra-diagram__body { position: relative; min-height: 365px; padding: 1.5rem; }
+
+/* Diagram canvas */
+.diagram-canvas { position: relative; display: grid; grid-template-columns: repeat(5, 1fr); grid-template-rows: repeat(5, 1fr); gap: 0.65rem; min-height: 310px; align-items: center; }
+
+/* Diagram node */
+.diagram-node { position: relative; z-index: 2; display: grid; place-items: center; min-height: 62px; padding: 0.55rem; border: 1px solid var(--line-strong); border-radius: var(--radius-sm); background: rgba(14,27,42,0.96); text-align: center; box-shadow: var(--shadow-small); }
+.diagram-node strong { display: block; font-family: "IBM Plex Mono", monospace; font-size: 0.68rem; letter-spacing: 0.05em; }
+
+/* Diagram node root */
+.diagram-node--root { grid-column: 3; grid-row: 1; border-color: rgba(79,182,232,0.55); background: var(--celeste-soft); color: var(--celeste-bright); }
+
+/* Diagram node engine */
+.diagram-node--engine { grid-column: 3; grid-row: 3; border-color: rgba(79,182,232,0.62); box-shadow: 0 0 0 5px rgba(63,169,224,0.06), var(--shadow-small); }
+
+/* Diagram node hip */
+.diagram-node--hip { grid-column: 2; grid-row: 5; border-color: rgba(82,211,154,0.34); }
+
+/* Diagram node core */
+.diagram-node--core { grid-column: 1; grid-row: 5; }
+
+/* Diagram node asset */
+.diagram-node--asset { grid-column: 4; grid-row: 5; border-color: rgba(232,169,60,0.38); }
+
+/* Diagram node EVM */
+.diagram-node--evm { grid-column: 5; grid-row: 5; }
+
+/* Diagram connector */
+.diagram-connector { position: absolute; z-index: 1; background: var(--line-strong); }
+
+/* Diagram connector root */
+.diagram-connector--root { top: 25%; left: calc(50% - 1px); width: 2px; height: 24%; }
+
+/* Diagram connector left */
+.diagram-connector--left { top: calc(73% - 1px); left: 22%; width: 29%; height: 2px; }
+
+/* Diagram connector right */
+.diagram-connector--right { top: calc(73% - 1px); right: 22%; width: 29%; height: 2px; }
+
+/* Diagram connector core */
+.diagram-connector--core { top: 73%; left: calc(10% - 1px); width: 2px; height: 20%; }
+
+/* Diagram connector EVM */
+.diagram-connector--evm { top: 73%; right: calc(10% - 1px); width: 2px; height: 20%; }
+
+/* Diagram connector arrow left after */
+.diagram-connector--arrow-left::after, .diagram-connector--arrow-right::after { position: absolute; top: -3px; border-top: 4px solid transparent; border-bottom: 4px solid transparent; content: ""; }
+.diagram-connector--arrow-left::after { right: 0; border-left: 5px solid var(--line-strong); }
+.diagram-connector--arrow-right::after { left: 0; border-right: 5px solid var(--line-strong); }
+
+/* Diagram caption */
+.diagram-caption { max-width: 600px; margin: 0 auto; color: var(--muted); font-size: 0.7rem; text-align: center; }
+
+/* Infra intro */
+.infra-intro { display: grid; align-content: space-between; gap: 1.25rem; padding: 1.35rem; }
+
+/* Infra intro number */
+.infra-intro__number { color: var(--celeste-bright); font-family: "IBM Plex Mono", monospace; font-size: 2.2rem; font-weight: 500; line-height: 1; }
+
+/* Infra intro h2 */
+.infra-intro h2 { margin: 0.7rem 0 0; font-size: 1.15rem; letter-spacing: -0.02em; }
+
+/* Infra intro p */
+.infra-intro p { margin: 0.65rem 0 0; color: var(--muted); font-size: 0.8rem; }
+
+/* Infra intro legend */
+.infra-intro__legend { display: grid; gap: 0.6rem; padding-top: 1rem; border-top: 1px solid var(--line); }
+
+/* Legend status */
+.legend-status { display: flex; align-items: center; gap: 0.5rem; color: var(--muted); font-size: 0.72rem; }
+
+/* Legend status marker */
+.legend-status__marker { width: 8px; height: 8px; border-radius: 2px; background: var(--celeste); }
+
+/* Legend status marker amber */
+.legend-status__marker--amber { background: var(--amber); }
+
+/* Infra cards */
+.infra-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+
+/* Infra card */
+.infra-card { position: relative; min-height: 205px; padding: 1.15rem; border: 1px solid var(--line); border-radius: var(--radius-md); background: rgba(14,27,42,0.64); }
+
+/* Infra card source */
+.infra-card--source { border-top: 2px solid var(--celeste); }
+
+/* Infra card engine */
+.infra-card--engine { border-top: 2px solid var(--amber); }
+
+/* Infra card core */
+.infra-card--core { border-top: 2px solid var(--green); }
+
+/* Infra card EVM */
+.infra-card--evm { border-top: 2px solid #ba8ff5; }
+
+/* Infra card top */
+.infra-card__top { display: flex; align-items: flex-start; justify-content: space-between; gap: 0.75rem; }
+
+/* Infra card h2 */
+.infra-card h2 { margin: 0; font-size: 0.88rem; }
+
+/* Infra card tag */
+.infra-card__tag { margin-top: 0.3rem; color: var(--muted); font-family: "IBM Plex Mono", monospace; font-size: 0.61rem; text-transform: uppercase; }
+
+/* Infra card list */
+.infra-card__list { display: grid; gap: 0.44rem; margin: 1rem 0 0; padding: 0; list-style: none; }
+
+/* Infra card list item */
+.infra-card__list li { display: flex; align-items: center; gap: 0.45rem; color: var(--muted-strong); font-size: 0.72rem; }
+
+/* Infra card list item before */
+.infra-card__list li::before { width: 4px; height: 4px; border-radius: 50%; background: var(--celeste); content: ""; }
+
+/* Infra card footer */
+.infra-card__footer { position: absolute; right: 1.15rem; bottom: 1.15rem; left: 1.15rem; display: flex; justify-content: space-between; gap: 1rem; padding-top: 0.7rem; border-top: 1px solid var(--line); color: var(--muted); font-family: "IBM Plex Mono", monospace; font-size: 0.6rem; }
+
+/* Infra flow */
+.infra-flow { display: flex; align-items: center; gap: 0.65rem; margin: 1.25rem 0; padding: 1rem 1.15rem; border: 1px solid var(--line); border-radius: var(--radius-md); background: rgba(255,255,255,0.025); }
+
+/* Infra flow label */
+.infra-flow__label { color: var(--muted); font-family: "IBM Plex Mono", monospace; font-size: 0.64rem; letter-spacing: 0.06em; text-transform: uppercase; }
+
+/* Infra flow line */
+.infra-flow__line { flex: 1; height: 1px; background: linear-gradient(90deg, var(--celeste), transparent); }
+
+/* Infra flow path */
+.infra-flow__path { color: var(--celeste-bright); font-family: "IBM Plex Mono", monospace; font-size: 0.67rem; }
