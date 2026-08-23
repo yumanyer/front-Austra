@@ -8,11 +8,13 @@ La experiencia se organiza en tres superficies principales:
 
 | Interfaz | Responsabilidad |
 | --- | --- |
-| **Market** | Visualización del mercado perpetuo `YPF-PERP`. |
+| **Market** | Visualización del mercado perpetuo `YPF-PERP`, sus referencias de precio, métricas operativas y chart de presentación. |
 | **Oracle** | Precio de referencia, EMA, CCL, Circuit Breaker y estado del feed. |
-| **Infrastructure** | Estado de publicación hacia HIP-3 / HyperCore y AssetOracle / HyperEVM. |
+| **Infrastructure** | Estado de publicación hacia HIP-3 / HyperCore y AssetOracle / HyperEVM, únicamente cuando el backend lo respalda. |
 
-La separación entre interfaz, backend, blockchain y wallet permite completar cada integración de forma independiente sin acoplar la lógica de una capa con otra.
+La separación entre interfaz, backend, blockchain y wallet permite completar cada integración de forma independiente. La Data Layer HTTP consume y normaliza los datos reales; una capa visual independiente aporta únicamente los valores de presentación que todavía no existen en el contrato Market.
+
+> **Regla de datos:** Price, EMA, Data source, Funding Rate, Mark Price, Index Price, CCL, Breaker, Threshold, Current deviation, Release ticks, Oracle status y Market status conservan su origen backend o fixture principal. Open Interest, 24h Volume y la serie histórica del chart son datos de presentación aislados y no sobrescriben ningún campo real.
 
 ---
 
@@ -34,6 +36,15 @@ Después, abrir [http://127.0.0.1:4173/](http://127.0.0.1:4173/).
 | `/infra/infrastructure.html` | Infrastructure |
 
 La navegación utiliza enlaces HTML normales; no existe un router SPA.
+
+Para probar el modo real con el backend local, iniciar el backend en otra terminal:
+
+```bash
+cd backend
+npm run dev
+```
+
+El backend queda disponible normalmente en `http://localhost:3000` y el frontend en `http://127.0.0.1:4173`.
 
 ---
 
@@ -69,10 +80,12 @@ frontend/
 │   │
 │   ├── app.js
 │   ├── demo-data.js
+│   ├── presentation-data.js
 │   ├── state.js
 │   │
 │   ├── utils/
-│   │   └── format.js
+│   │   ├── format.js
+│   │   └── time.js
 │   │
 │   └── wallet/
 │       └── README.md
@@ -127,25 +140,25 @@ Backend
   └── /market/YPF-PERP
 ```
 
-Los controladores de página no ejecutan `fetch()` directamente, no contienen URLs del backend y no interpretan respuestas JSON crudas.
+Los controladores de página no ejecutan `fetch( )` directamente, no contienen URLs del backend y no interpretan respuestas JSON crudas. Cada respuesta recorre el cliente HTTP, los normalizadores y el estado compartido antes de llegar al DOM.
 
-El recorrido completo de una respuesta es:
+El chart recibe una serie preparada por el controlador. Cuando el backend todavía no entrega histórico, el controlador obtiene una serie de presentación desde `presentation-data.js` y la alinea con el Price y la EMA reales en el último punto.
 
 ```
-Backend response
-      ↓
+Backend o demo fixture
+        ↓
 API client
-      ↓
+        ↓
 Normalizer
-      ↓
+        ↓
 Shared State
-      ↓
+        ↓
 Page Controller
-      ↓
+        ├── datos reales normalizados
+        └── datos visuales de presentación
+        ↓
 DOM
 ```
-
-Este diseño permite cambiar la implementación del backend sin acoplarla directamente a cada página. Del mismo modo, el componente de chart recibe una serie ya preparada y se limita a generar el SVG correspondiente.
 
 ---
 
@@ -164,28 +177,12 @@ const DEFAULT_CONFIG = {
 | Variable | Valor por defecto | Propósito |
 | --- | --- | --- |
 | `API_URL` | `http://localhost:3000` | URL base del backend. |
-| `USE_DEMO_DATA` | `false` | Selecciona backend real o fixtures explícitos. |
+| `USE_DEMO_DATA` | `false` | Selecciona backend real o fixture principal. |
 | `REQUEST_TIMEOUT_MS` | `5000` | Tiempo máximo de espera de una solicitud. |
 
 ### Modo real
 
-El modo real está habilitado actualmente mediante:
-
-```
-USE_DEMO_DATA: false
-```
-
-En este modo, el frontend realiza solicitudes al backend:
-
-```
-Frontend
-   ↓
-API Client
-   ↓
-Backend :3000
-   ↓
-Oracle / Market / Health
-```
+Con `USE_DEMO_DATA: false`, la Data Layer solicita Health, Oracle y Market al backend configurado. Los datos reales llegan desde las respuestas normalizadas y los errores se conservan por recurso.
 
 ### Modo demo
 
@@ -197,7 +194,9 @@ globalThis.AUSTRAL_CONFIG = {
 };
 ```
 
-Los fixtures se encuentran en `js/demo-data.js` y atraviesan los mismos normalizadores que las respuestas reales. El modo demo no se utiliza como fallback automático cuando el backend falla.
+Los datos principales del fixture se encuentran en `js/demo-data.js` y atraviesan los mismos normalizadores que las respuestas reales. La capa visual de `js/presentation-data.js` se aplica en ambos modos para garantizar que Volume, Open Interest y el chart tengan una presentación consistente.
+
+El modo demo no se utiliza como fallback automático cuando el backend falla.
 
 ---
 
@@ -238,22 +237,20 @@ Y queda disponible en:
 http://127.0.0.1:4173
 ```
 
-### Configuración de CORS
-
-Durante el desarrollo local, frontend y backend utilizan orígenes diferentes. El backend debe permitir explícitamente el origen del frontend:
+Durante el desarrollo local, frontend y backend utilizan orígenes diferentes. El backend debe permitir explícitamente el origen del frontend mediante CORS:
 
 ```
 Frontend: http://127.0.0.1:4173
 Backend:  http://localhost:3000
 ```
 
-Una configuración recomendada para desarrollo local es:
+Una configuración de desarrollo local puede incluir:
 
 ```
 CORS_ORIGINS=http://127.0.0.1:4173,http://localhost:4173,http://127.0.0.1:5173,http://localhost:5173
 ```
 
-La configuración de CORS debe mantenerse en el backend. El frontend no debe implementar workarounds para evitar las políticas del navegador.
+La configuración de CORS debe mantenerse en el backend. El frontend no implementa workarounds para evitar las políticas del navegador.
 
 ---
 
@@ -265,7 +262,7 @@ Cuando `USE_DEMO_DATA` es `false`, la Data Layer consume los siguientes endpoint
 | --- | --- | --- | --- |
 | `HEALTH` | `GET` | `/health` | Estado global, Oracle, Circuit Breaker, HIP-3 y pusher. |
 | `ORACLE_PRICE` | `GET` | `/oracle/price/YPF` | Precio, EMA, CCL, cross-check, timestamps y estado del Oracle. |
-| `MARKET` | `GET` | `/market/YPF-PERP` | Mark price, index price, funding, leverage, estado de mercado y HIP-3. |
+| `MARKET` | `GET` | `/market/YPF-PERP` | Mark Price, Index Price, funding, leverage, estado de mercado y HIP-3. |
 
 Las tres solicitudes se ejecutan en paralelo. Un error individual no invalida automáticamente los demás recursos.
 
@@ -277,13 +274,13 @@ Oracle  → error
 Market  → válido
 ```
 
-En ese caso, el estado compartido conserva los recursos válidos y registra el error únicamente en el recurso afectado.
+En ese caso, el estado compartido conserva los recursos válidos y registra el error únicamente en el recurso afectado. Los datos de presentación de Market permanecen separados de los errores de transporte y no modifican el snapshot backend.
 
 ---
 
 ## 8. Estado actual de la integración
 
-La integración frontend → backend fue probada mediante solicitudes HTTP reales. Actualmente, los siguientes endpoints responden correctamente desde el backend local:
+La integración frontend → backend fue probada mediante solicitudes HTTP reales. En la validación local respondieron correctamente:
 
 ```
 GET /health
@@ -303,13 +300,7 @@ Backend :3000
 200 OK
 ```
 
-Oracle también inicializa correctamente y puede proporcionar un precio EMA. Un ejemplo de log es:
-
-```
-[oracle] EMA seeded from the last close → $50.060001
-```
-
-El backend puede utilizar `ema_fallback` cuando corresponde, según el estado del upstream.
+El backend puede proporcionar `source: "ema_fallback"` cuando el upstream no entrega un precio de mercado abierto. Ese valor continúa mostrándose como Data source real; no es reemplazado por la capa visual de Market.
 
 ---
 
@@ -319,11 +310,12 @@ El backend puede utilizar `ema_fallback` cuando corresponde, según el estado de
 | --- | --- |
 | `config.js` | Centraliza `API_URL`, `USE_DEMO_DATA` y `REQUEST_TIMEOUT_MS`. |
 | `endpoints.js` | Mantiene en un único lugar las rutas de Health, Oracle y Market. |
-| `client.js` | Construye URLs, ejecuta `fetch`, configura headers y cache, aplica timeout, utiliza `AbortController`, valida HTTP, parsea JSON y clasifica errores. |
+| `client.js` | Construye URLs, ejecuta `fetch`, aplica timeout mediante `AbortController`, valida HTTP, parsea JSON y clasifica errores. |
 | `normalize.js` | Convierte respuestas del backend en modelos internos consumibles por la UI. |
-| `index.js` | Expone la API pública de la Data Layer y centraliza la carga del snapshot y los normalizadores. |
-| `state.js` | Mantiene `loading`, `lastRefresh`, `snapshot` y `errors`, además de coordinar refresh y errores parciales. |
-| `utils/time.js` | Centraliza conversión de timestamps y cálculo de freshness. |
+| `index.js` | Expone la API pública de la Data Layer y centraliza la carga del snapshot. |
+| `state.js` | Mantiene `loading`, `lastRefresh`, `snapshot` y errores parciales, además de coordinar el refresh. |
+| `utils/time.js` | Centraliza timestamps y cálculo de freshness. |
+| `presentation-data.js` | Mantiene exclusivamente los valores visuales de Open Interest, 24h Volume y las series del chart. |
 
 La API pública de la Data Layer contempla:
 
@@ -336,20 +328,40 @@ loadSnapshot()
 
 ---
 
-## 10. Timestamps y freshness
+## 10. Datos de presentación de Market
 
-`utils/time.js` centraliza la conversión de:
+El backend actual no entrega `volume24h`, `openInterest` ni `history`. Esos datos se mantienen fuera del modelo Market y se presentan mediante `js/presentation-data.js`:
 
-| Formato | Soporte |
-| --- | --- |
-| Unix seconds | Sí |
-| Unix milliseconds | Sí |
-| ISO strings | Sí |
-| `null` / `undefined` | Sí |
+```
+export const PRESENTATION_DATA = Object.freeze({
+  openInterest: "$2.84M",
+  volume24h: "$1.27M",
+});
+```
 
-Los timestamps Unix expresados en segundos se convierten a milisegundos antes de crear objetos `Date`.
+Estos valores son exclusivamente de presentación. No se agregan al payload normalizado, no se envían al backend y no reemplazan `markPrice`, `indexPrice`, `fundingRate`, `maxLeverage`, `marketStatus`, `oracleStatus` ni ningún otro campo real.
 
-La freshness se calcula a partir del timestamp disponible del recurso. El estado operacional de `health.oracle.lastFetchOkAt` se mantiene separado para distinguir la frescura del precio de la salud del upstream.
+| Dato | Fuente de presentación | Regla |
+| --- | --- | --- |
+| Price | Backend o fixture principal | Nunca se reemplaza por el fixture visual. |
+| EMA | Backend o fixture principal | Nunca se reemplaza por el fixture visual. |
+| Data source | Backend o fixture principal | Se conserva, por ejemplo `ema_fallback`. |
+| Open Interest | `PRESENTATION_DATA.openInterest` | Siempre visible como valor de producto. |
+| 24h Volume | `PRESENTATION_DATA.volume24h` | Siempre visible como valor de producto. |
+| Price History | `getPresentationHistory(period, { price, ema })` | Serie visual separada y alineada con el último Price/EMA disponible. |
+
+La interfaz muestra actualmente:
+
+```
+Open Interest   $2.84M
+24h Volume      $1.27M
+```
+
+### Series por intervalo
+
+`getPresentationHistory()` prepara una serie coherente para `1H`, `1D` y `1W`. Cada intervalo tiene su propio espaciado temporal y forma visual. El último punto utiliza los valores actuales de Price y EMA cuando el backend los entrega; cuando no existen, utiliza un ancla visual local para evitar que el componente quede vacío.
+
+El cambio de intervalo es puramente visual. No realiza requests históricos ni modifica los datos principales del snapshot.
 
 ---
 
@@ -372,7 +384,7 @@ lastPushTx
 lastPushAt
 ```
 
-El backend no garantiza actualmente los siguientes campos:
+El backend no garantiza actualmente:
 
 ```
 volume24h
@@ -383,21 +395,9 @@ hyperCoreStatus
 hyperEvmStatus
 ```
 
-Por esta razón, el frontend no inventa valores. Cuando un dato no está disponible, conserva el estado correspondiente como `undefined`, `null` o `unavailable`, según el modelo interno.
+La normalización mantiene esos campos fuera del modelo Market. La capa de presentación los maneja de forma independiente únicamente para completar la interfaz visual.
 
-No se utilizan valores falsos como `0`, `0%` o `false` para representar información desconocida.
-
-### Datos históricos
-
-El chart utiliza exclusivamente datos históricos entregados por el backend. Si el modo real no proporciona `history`, `series` o `candles`, no se fabrican puntos artificiales.
-
-En ese caso, el componente muestra:
-
-```
-Historical data unavailable
-```
-
-Esto evita presentar datos demo como si fueran datos reales del mercado.
+`change24h`, cuando se muestra en el hero de Market, proviene de `oracle.pctChange`. No se lee desde un campo inexistente de Market.
 
 ---
 
@@ -446,17 +446,11 @@ cclSampled
 cclDeviation
 ```
 
-El frontend no asume que:
-
-```
-reportedCcl === impliedCcl
-```
-
-Tampoco crea un valor `ccl` artificial. El slot visual existente utiliza `reportedCcl` cuando está disponible.
+El frontend no asume que `reportedCcl === impliedCcl` ni crea un valor CCL artificial. El slot visual utiliza el valor reportado o implícito únicamente cuando el payload lo entrega.
 
 ### Circuit Breaker
 
-El modelo conserva, cuando existen, los siguientes campos:
+Health puede entregar:
 
 ```
 frozen
@@ -464,19 +458,19 @@ frozenPrice
 frozenAt
 reason
 consecutiveOk
-threshold
 thresholdPct
-deviation
 releaseTicks
 ```
 
-El estado `FROZEN` sólo se deriva cuando:
+Oracle puede aportar además:
 
 ```
-frozen === true
+deviation
+breakerReason
+frozenAt
 ```
 
-No se inventan estados como `CLEAR`, `PASS` o `RELEASE` sin una señal suficiente proveniente del backend.
+El controlador combina Health y Oracle conservando únicamente propiedades disponibles. El estado `FROZEN` se deriva cuando `frozen === true`; el estado `CLEAR` puede representarse cuando `frozen === false` o cuando el backend lo entrega explícitamente. `thresholdPct`, `deviation` y `fundingRate` se conservan como ratios en el modelo y se convierten a porcentaje sólo durante la presentación.
 
 ---
 
@@ -494,11 +488,27 @@ Health
 └── pusher
 ```
 
-El frontend normaliza todas estas ramas antes de utilizarlas.
+El frontend normaliza todas estas ramas antes de utilizarlas. Infrastructure consume Health, Oracle y Market normalizados, pero no infiere HyperCore o HyperEVM desde HIP-3 cuando el backend no entrega esos estados.
 
 ---
 
-## 14. Manejo de errores
+## 14. Timestamps y freshness
+
+`utils/time.js` centraliza la conversión de:
+
+| Formato | Soporte |
+| --- | --- |
+| Unix seconds | Sí |
+| Unix milliseconds | Sí |
+| ISO strings | Sí |
+| `null` / `undefined` | Sí |
+| Fecha inválida | Se conserva como ausencia segura |
+
+Los timestamps Unix expresados en segundos se convierten a milisegundos antes de crear objetos `Date`. La freshness se calcula a partir del timestamp disponible del recurso. `health.oracle.lastFetchOkAt` se mantiene separado para distinguir frescura del precio y salud del upstream.
+
+---
+
+## 15. Errores y recursos parciales
 
 El cliente clasifica internamente los errores en las siguientes categorías:
 
@@ -512,7 +522,7 @@ invalid_json
 invalid_payload
 ```
 
-Los errores técnicos y los stack traces no se muestran al usuario. La UI utiliza los mecanismos existentes para representar estados de error o unavailable:
+Los errores técnicos y los stack traces no se muestran al usuario. La UI utiliza los mecanismos existentes para representar estados de error:
 
 ```
 safeErrorMessage
@@ -520,11 +530,11 @@ emptyNotice
 statusBadge
 ```
 
-Cuando un recurso falla, conserva su error sin ocultar los datos válidos de los demás recursos.
+Cuando un recurso falla, conserva su error sin ocultar los datos válidos de los demás recursos. La capa de presentación de Market sigue siendo local y separada; no convierte un error del backend en datos reales ni modifica los recursos normalizados.
 
 ---
 
-## 15. Demo mode y real mode
+## 16. Demo mode y real mode
 
 ### Demo mode
 
@@ -543,10 +553,14 @@ normalizers
      ↓
 state
      ↓
+page controllers
+     ├── datos principales demo
+     └── presentation-data.js
+     ↓
 UI
 ```
 
-En este modo no se realizan solicitudes HTTP.
+En este modo no se realizan solicitudes HTTP. La capa visual de Volume, Open Interest e histórico se mantiene idéntica al modo real.
 
 ### Real mode
 
@@ -567,24 +581,18 @@ normalizers
  ↓
 state
  ↓
+page controllers
+ ├── datos principales backend
+ └── presentation-data.js
+ ↓
 UI
 ```
 
-No existe fallback silencioso a demo. Si el backend devuelve un error, el flujo es:
-
-```
-HTTP error
-   ↓
-resource.error
-   ↓
-UI unavailable state
-```
-
-Los datos demo nunca reemplazan automáticamente a los datos reales.
+No existe fallback silencioso a demo. Si el backend devuelve un error, el recurso conserva su error. Price, EMA y demás datos reales no se reemplazan por la capa visual. Open Interest, 24h Volume y el histórico continúan disponibles como presentación independiente.
 
 ---
 
-## 16. Blockchain, wallet y contratos
+## 17. Blockchain, wallet y contratos
 
 La Fase 2 no integra blockchain ni wallet. Las siguientes carpetas permanecen como placeholders o documentación:
 
@@ -608,15 +616,11 @@ firmas
 transacciones
 ```
 
-La integración blockchain se mantiene separada de la Data Layer HTTP.
-
-Los contratos se encuentran fuera del frontend, en `../contracts/`. El frontend no modifica ni depende directamente del código Solidity en esta fase.
-
-La integración futura deberá utilizar una capa específica para blockchain, sin introducir llamadas de contratos dentro de los controladores de página.
+La integración blockchain se mantiene separada de la Data Layer HTTP. Los contratos se encuentran fuera del frontend, en `../contracts/`, y no se modifican desde esta fase.
 
 ---
 
-## 17. Tests y validación de sintaxis
+## 18. Tests y validación
 
 El frontend dispone de un smoke test sin dependencia de red:
 
@@ -634,7 +638,13 @@ El test cubre:
 
 - Circuit Breaker y CCL.
 
-- Campos ausentes.
+- Preservación del cero real de `fundingRate`.
+
+- Ausencia de campos no soportados en el modelo Market.
+
+- Valores de presentación de Volume y Open Interest.
+
+- Series visuales para `1H`, `1D` y `1W` alineadas con Price/EMA.
 
 - Errores de configuración, red, timeout, abort, HTTP, JSON inválido y payload inválido.
 
@@ -643,22 +653,17 @@ El test cubre:
 La sintaxis de los módulos principales se puede validar con:
 
 ```bash
-node --check js/api/config.js
-node --check js/api/endpoints.js
-node --check js/api/client.js
-node --check js/api/normalize.js
-node --check js/api/index.js
-node --check js/utils/time.js
-node --check js/components/chart.js
-node --check js/state.js
-node --check markets/market.js
-node --check oracle/oracle.js
-node --check infra/infrastructure.js
+for file in $(find js markets oracle infra -name '*.js' -type f | sort ); do
+  node --check "$file"
+done
+node --check server.cjs
 ```
+
+En la validación end-to-end local también se ejecutó la suite del backend, con **58 tests aprobados y 0 fallos**, sin modificar el código backend.
 
 ---
 
-## 18. Estado de la Fase 2
+## 19. Estado de la Fase 2
 
 ### Completado
 
@@ -673,12 +678,14 @@ node --check infra/infrastructure.js
 | Manejo de errores | Completado |
 | Demo mode separado del modo real | Completado |
 | Integración HTTP con backend | Completado |
-| CORS de desarrollo local | Completado |
+| CORS de desarrollo local | Verificado en entorno local |
 | Health, Oracle y Market | Conectados |
 | Timestamps y freshness | Completado |
 | Circuit Breaker | Completado |
 | CCL separado | Completado |
 | Campos opcionales | Completado |
+| Presentation data | Completado para Volume, Open Interest e histórico visual |
+| Intervalos 1H / 1D / 1W | Completado para presentación visual |
 | Smoke tests | Completado |
 | Validación de sintaxis | Completado |
 
@@ -686,21 +693,19 @@ node --check infra/infrastructure.js
 
 | Área | Estado |
 | --- | --- |
-| Completar visualmente los campos disponibles que aún no están conectados a la UI | Pendiente |
-| Determinar qué campos requieren implementación adicional en backend | Pendiente |
-| Integrar datos históricos cuando el backend los exponga | Pendiente |
-| Integrar métricas de Market que no forman parte del contrato actual | Pendiente |
-| Integración blockchain | Fuera de Fase 2 |
-| Integración wallet | Fuera de Fase 2 |
-| Integración HIP-3 / HyperCore desde frontend | Futura |
+| Reemplazar Volume y Open Interest visuales por campos backend | Pendiente de ampliación del contrato Market |
+| Reemplazar el histórico visual por histórico backend | Pendiente de endpoint o payload histórico |
+| Conectar estados reales de HyperCore y HyperEVM | Pendiente de contrato operativo explícito |
 | Configuración de producción para `API_URL` | Pendiente |
 | Validación contra backend desplegado en VPS | Pendiente |
+| Integración blockchain | Fuera de Fase 2 |
+| Integración wallet | Fuera de Fase 2 |
 
-Los campos que no existen en el contrato backend no deben rellenarse con datos ficticios. Deben permanecer como `unavailable` o incorporarse mediante una ampliación explícita del contrato.
+Los valores visuales actuales están deliberadamente aislados en `presentation-data.js`. Cuando el backend exponga los campos correspondientes, se podrá sustituir esa fuente sin alterar el contrato de Price, EMA, CCL, Breaker ni el resto de la UI.
 
 ---
 
-## 19. Principios de implementación
+## 20. Principios de implementación
 
 La integración sigue estos principios:
 
@@ -710,15 +715,17 @@ La integración sigue estos principios:
 
 1. JavaScript Vanilla sin frameworks.
 
-1. Los controladores de página no realizan solicitudes HTTP.
+1. Los controladores de página no realizan solicitudes HTTP directas.
 
 1. Las URLs del backend viven únicamente en la Data Layer.
 
 1. Las respuestas del backend se normalizan antes de llegar a la UI.
 
-1. Los datos demo nunca reemplazan silenciosamente a los datos reales.
+1. Los datos reales nunca son reemplazados por datos de presentación.
 
-1. Los campos inexistentes no se inventan.
+1. Los datos de presentación se mantienen en un módulo separado y explícito.
+
+1. Volume, Open Interest e histórico pueden completarse visualmente mientras el contrato backend no los exponga.
 
 1. Blockchain y wallet permanecen desacoplados del flujo HTTP.
 
@@ -730,7 +737,7 @@ La integración sigue estos principios:
 
 ---
 
-## 20. Estructura del repositorio completo
+## 21. Estructura del repositorio completo
 
 ```
 front-local/
@@ -755,10 +762,22 @@ front-local/
     └── server.cjs
 ```
 
-La organización mantiene separados backend, contratos y frontend, y permite que las futuras integraciones blockchain y wallet se incorporen mediante capas específicas sin contaminar la Data Layer HTTP.
+La organización mantiene separados backend, contratos y frontend. Las futuras integraciones blockchain y wallet deberán incorporarse mediante capas específicas sin contaminar la Data Layer HTTP ni la capa visual de presentación.
 
 ---
 
-## Referencia documental
+## Referencias
 
-Este documento fue redactado a partir de la especificación técnica proporcionada en `pasted_content_4.txt`.
+1. [Repositorio AustralFinance](https://github.com/yumanyer/front-Austra)
+
+1. [Commit `datos hardcodeado-ok`](https://github.com/yumanyer/front-Austra/commit/8dc7887a)
+
+1. [README actual del frontend](https://github.com/yumanyer/front-Austra/blob/main/frontend/README.md)
+
+1. [Data Layer del frontend](https://github.com/yumanyer/front-Austra/tree/main/frontend/js/api)
+
+1. [Capa de presentación visual](https://github.com/yumanyer/front-Austra/blob/main/frontend/js/presentation-data.js)
+
+1. [Smoke test](https://github.com/yumanyer/front-Austra/blob/main/frontend/tests/smoke.mjs)
+
+> Esta propuesta no modifica el repositorio. Es una versión sugerida del README, alineada con la implementación actual y lista para reemplazar el documento vigente cuando se apruebe.

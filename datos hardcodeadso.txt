@@ -1,0 +1,74 @@
+DATA HARDCODEADO - CAPACIDADES DEL FRONTEND Y ORIGEN BLOCKCHAIN
+
+==================================================
+¿Qué datos muestra el frontend?
+==================================================
+
+El frontend (vanilla JS, sin framework) tiene 3 páginas principales:
+
+1. PÁGINA MARKET (markets/market.js):
+   - Precio mark y index
+   - Volumen 24h y open interest
+   - Tasa de financiación y máximo apalancamiento
+   - Estado de la oracle (fuente, frescura, EMA, state del circuit breaker)
+
+2. PÁGINA ORACLE (oracle/oracle.js):
+   - Pipeline de 6 etapas: Data912 → Normalize → CCL Cross-check → Circuit Breaker → EMA → Precio Publicado
+   - Métricas: precio, EMA, bid/ask, spread, CCL, CCL implícito
+   - State del circuit breaker con barras de progreso (umbral, desviación, ticks de liberación)
+   - Badges de fuente/frescura
+
+3. PÁGINA INFRASTRUCTURE (infra/infrastructure.js):
+   - Status de componentes: Data Source, Oracle Engine, HIP-3, HyperCore, HyperEVM
+   - Diagrama de arquitectura con doble ruta de entrega (HIP-3 → HyperCore, AssetOracle → HyperEVM)
+   - Cards informativas de cada componente
+
+==================================================
+Origen de los datos: Blockchain → Backend → Frontend
+==================================================
+
+BLOQUECHAIN (Smart Contracts):
+- YPFOracle.sol: Almacena precio (precision 1e6) + timestamp para símbolo YPF
+  - Funciones: latestPrice(), latestPriceFor(), isFresh()
+- HIP-3 Publisher: Cada 3s publica precio a HyperCore via perpDeploy.setOracle
+  - Modo dry-run por defecto (solo log, no envía tx)
+  - Requiere HIP3_ENABLED=true + HIP3_ORACLE_UPDATER_KEY para modo live
+- EVM Pusher: Cada 30s espeja precio a AssetOracle.sol en HyperEVM
+  - Auditable mirror (HyperCore NO lee este contrato)
+  - Requiere ORACLE_CONTRACT_ADDRESS + PUSHER_PRIVATE_KEY
+  - Deshabilitado por defecto
+
+BACKEND (Fastify - Node.js):
+- Puerto 3000, CORS configurado
+- 3 endpoints HTTP consumidos por el frontend:
+  • GET /health - Estado global, oracle, breaker, HIP-3, pusher
+  • GET /oracle/price/YPF - Precio, EMA, bid/ask/spread, cross-check CCL, status, source
+  • GET /market/YPF-PERP - markPrice, indexPrice, fundingRate, maxLeverage, marketStatus, oracleStatus
+
+PROCESAMIENTO EN BACKEND (antes de llegar al frontend):
+1. Fetch de Data912 API (datos argentinos: ADR USD, stocks locales ARS, CCL)
+2. Validación de libro (bid/ask spread), flag stale si spread > 2%
+3. Cross-check CCL: localArs * adrRatio / adrUsd vs reported CCL
+4. Circuit breaker: si |price - ema| / ema > 10% → frozen (state frozen)
+5. EMA smoothing: alpha=0.2, seeded con 5 closes históricas al boot
+6. Publicación de endpoints HTTP
+
+FLUJO COMPLETO:
+Data912 → Backend Oracle Pipeline → HTTP Endpoints → Frontend API Client → Normalizer → Shared State → DOM UI
+
+==================================================
+Configuración del Frontend:
+==================================================
+- USE_DEMO_DATA: false (modo real por defecto)
+- API_URL: http://localhost:3000
+- REQUEST_TIMEOUT_MS: 5000
+- Puede cambiar a demo mode via: globalThis.AUSTRAL_CONFIG = { USE_DEMO_DATA: true }
+
+==================================================
+Fuentes de datos reales:
+==================================================
+- Data912 API: Precios oficiales (ADR/USA), stocks locales (BYMA/YPFD), tipo de cambio CCL
+- Circuit breaker: Protección contra desviaciones >10% del EMA
+- EMA: Media móvil exponencial con alpha=0.2
+- HIP-3: Publicación en HyperCore para funding/liquidations de perps
+- EVM Pusher: Espejo auditables en HyperEVM
