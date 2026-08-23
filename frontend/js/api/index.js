@@ -1,15 +1,4 @@
-import { firstValue, isAvailable, safeErrorMessage } from "./utils.js";
-
-const DEFAULT_TIMEOUT = 4500;
-
-function getConfig() {
-  return window.AUSTRAL_CONFIG || {};
-}
-
-export function getApiBase() {
-  const configured = getConfig().API_URL || getConfig().apiUrl || "";
-  return String(configured).replace(/\/$/, "");
-}
+import { firstValue, isAvailable } from "../utils/format.js";
 
 function unwrapPayload(payload, keys = []) {
   if (!payload || typeof payload !== "object") return {};
@@ -18,35 +7,6 @@ function unwrapPayload(payload, keys = []) {
   }
   if (payload.data && typeof payload.data === "object") return payload.data;
   return payload;
-}
-
-export async function requestJson(path, options = {}) {
-  const controller = new AbortController();
-  const timeout = options.timeout || DEFAULT_TIMEOUT;
-  const timer = window.setTimeout(() => controller.abort(), timeout);
-  const url = `${getApiBase()}${path}`;
-
-  try {
-    const response = await fetch(url, {
-      method: "GET",
-      headers: { Accept: "application/json" },
-      signal: controller.signal,
-      cache: "no-store",
-    });
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    return await response.json();
-  } finally {
-    window.clearTimeout(timer);
-  }
-}
-
-async function loadResource(path, fallbackMessage) {
-  try {
-    const payload = await requestJson(path);
-    return { status: "success", data: payload, error: null };
-  } catch (error) {
-    return { status: "error", data: null, error: safeErrorMessage(error, fallbackMessage) };
-  }
 }
 
 export function normalizeOracle(payload) {
@@ -104,17 +64,4 @@ export function normalizeHealth(payload) {
   };
 }
 
-export async function loadSnapshot() {
-  const [health, oracle, market] = await Promise.all([
-    loadResource("/health", "Backend unavailable"),
-    loadResource("/oracle/price/YPF", "Oracle unavailable"),
-    loadResource("/market/YPF-PERP", "Market data unavailable"),
-  ]);
-
-  return {
-    health: { ...health, data: health.data ? normalizeHealth(health.data) : null },
-    oracle: { ...oracle, data: oracle.data ? normalizeOracle(oracle.data) : null },
-    market: { ...market, data: market.data ? normalizeMarket(market.data) : null },
-    fetchedAt: new Date().toISOString(),
-  };
-}
+// Real transport and endpoints are intentionally deferred to a later integration phase.

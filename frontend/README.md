@@ -2,7 +2,7 @@
 
 Frontend de producto para AustralFinance, construido exclusivamente con **HTML5, CSS3 y JavaScript Vanilla**. La interfaz organiza la experiencia en tres niveles: el mercado perpetuo `YPF-PERP`, el Oracle de precio y la infraestructura de publicación hacia HIP-3 / HyperCore y AssetOracle / HyperEVM.
 
-La versión publicada actualmente está configurada como **DEMO DATA** para revisión visual. Todos los precios, estados, métricas y puntos del chart provienen de `js/demo-data.js` y están marcados como `SIMULATED` o `DEMO DATA` dentro de la interfaz.
+La versión publicada actualmente está configurada como **DEMO DATA** para revisión visual. Todos los precios, estados, métricas y puntos del chart provienen de `js/demo-data.js` y están marcados como `DEMO DATA` dentro de la interfaz.
 
 ## Ejecutar localmente
 
@@ -12,52 +12,57 @@ El repositorio no depende de un package manager ni de un framework. Para levanta
 node server.cjs
 ```
 
-Luego abrir `http://127.0.0.1:4173/`. Las rutas disponibles son `/`, `/markets`, `/oracle` e `/infrastructure`.
+Luego abrir `http://127.0.0.1:4173/`. La portada muestra Market y las interfaces tienen archivos HTML independientes en `/markets/market.html`, `/oracle/oracle.html` e `/infra/infrastructure.html`.
 
-## Configurar el backend
-
-La URL base del backend se configura antes de cargar `js/app.js` mediante `window.AUSTRAL_CONFIG` en `index.html`:
-
-```html
-<script>
-  window.AUSTRAL_CONFIG = {
-    API_URL: "https://api.example.com",
-    USE_DEMO_DATA: false
-  };
-</script>
-```
-
-Con `USE_DEMO_DATA: true`, el cliente no realiza requests y usa el fixture explícito de `js/demo-data.js`. Para conectar el backend, cambiar la bandera a `false` y configurar `API_URL`.
-
-El cliente centralizado consulta:
-
-```text
-GET /health
-GET /oracle/price/YPF
-GET /market/YPF-PERP
-```
-
-Las respuestas se normalizan en `js/api.js`. Los componentes nunca hacen `fetch()` directamente. Si un endpoint falla, la UI muestra el estado correspondiente (`Oracle unavailable`, `Market data unavailable`, `Backend unavailable`) y deja las métricas sin valor.
+La navegación se realiza mediante enlaces HTML normales; no existe un router SPA.
 
 ## Estructura
 
 ```text
 index.html
-css/styles.css
-js/app.js
-js/api.js
-js/state.js
-js/utils.js
-js/components/common.js
-js/components/chart.js
-js/views/market.js
-js/views/oracle.js
-js/views/infrastructure.js
+markets/
+├── market.html
+├── market.js
+└── markets.css
+oracle/
+├── oracle.html
+├── oracle.js
+└── oracle.css
+infra/
+├── infrastructure.html
+├── infrastructure.js
+└── infra.css
+css/
+├── root.css
+└── media.css
+js/
+├── api/
+│   └── index.js
+├── blockchain/
+│   ├── README.md
+│   └── (punto de integración futuro)
+├── wallet/
+│   ├── README.md
+│   └── (punto de integración futuro)
+├── components/
+│   ├── common.js
+│   └── chart.js
+├── utils/
+│   └── format.js
+├── app.js
+├── demo-data.js
+└── state.js
+tests/
+└── smoke.mjs
 logo.png
 server.cjs
 ```
 
-El gráfico espera una serie real dentro de `history`, `series` o `candles` en la respuesta del endpoint de Market. En modo demo usa la serie explícita de `js/demo-data.js`; con el backend real y sin histórico, muestra `Historical data unavailable`.
+Los documentos HTML contienen la estructura visual real de cada interfaz. Los scripts de página actualizan elementos existentes, gestionan interacciones y delegan el SVG del chart al componente reutilizable `js/components/chart.js`.
+
+## Datos mock y puntos de integración
+
+El frontend conserva el fixture explícito de `js/demo-data.js`. `js/api/index.js` mantiene únicamente las funciones de normalización; no realiza requests, no agrega endpoints y no conecta Data912, backend, blockchain, RPC, WDK, wallet o transacciones en esta fase. Las carpetas `js/api/`, `js/blockchain/` y `js/wallet/` quedan preparadas para una integración posterior.
 
 ## Verificación
 
@@ -67,8 +72,4 @@ La prueba de normalización se ejecuta con:
 node tests/smoke.mjs
 ```
 
-Además, todos los módulos se pueden validar con `node --check`.
-
-## Datos no implementados
-
-El repositorio auditado no incluye backend, contratos, ABI o endpoints de cadena. En la variante DEMO, Volume, Open Interest y estados blockchain se muestran con valores fixture sólo para hacer visible la composición, siempre dentro de un contexto `DEMO DATA`. Al desactivar el modo demo, la interfaz vuelve a mostrar `—`, `UNAVAILABLE` o `COMING SOON` hasta que exista una fuente real. La arquitectura permanece preparada para incorporar esos campos sin cambios visuales.
+Además, todos los módulos se pueden validar con `node --check`. El servidor local sirve los archivos estáticos directamente y no transforma las rutas en `index.html`.

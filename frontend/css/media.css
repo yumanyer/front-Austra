@@ -1,0 +1,71 @@
+@media (max-width: 980px) {
+  .market-layout, .oracle-grid, .infra-hero { grid-template-columns: 1fr; }
+  .market-side { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
+  .market-side .oracle-summary { grid-column: 1 / -1; }
+  .pipeline { grid-template-columns: repeat(3, 1fr); gap: 1.5rem 0; }
+  .pipeline-step:nth-child(3)::after, .pipeline-step:nth-child(3)::before { display: none; }
+  .pipeline-step:nth-child(n+4) { padding-top: 0.5rem; }
+  .infra-cards { grid-template-columns: repeat(2, 1fr); }
+  .infra-cards .infra-card:last-child { grid-column: 1 / -1; }
+}
+
+@media (max-width: 720px) {
+  :root { --header-height: 66px; }
+  .header-inner, .container { width: min(100% - 1.5rem, var(--container)); }
+  .sync-strip { padding-inline: 0.75rem; }
+  .primary-nav, .site-header > .header-inner > .wallet-button { display: none; }
+  .menu-button { display: block; }
+  .mobile-nav { display: none; padding: 0.7rem 0.75rem 1rem; border-bottom: 1px solid var(--line); background: var(--navy-900); }
+  .mobile-nav.is-open { display: grid; gap: 0.25rem; }
+  .mobile-nav .nav-link { display: block; padding: 0.75rem; }
+  .mobile-nav .wallet-button { display: inline-flex; width: 100%; margin-top: 0.45rem; }
+  .page { padding-top: 2.2rem; }
+  .page-header { display: block; margin-bottom: 1.55rem; }
+  .page-header__meta { margin-top: 1.2rem; }
+  .market-header { grid-template-columns: 1fr; gap: 1.25rem; padding: 1.15rem; }
+  .market-header__side { align-items: flex-start; }
+  .market-header__side-note { max-width: none; text-align: left; }
+  .market-header__price { margin-top: 1.3rem; }
+  .status-strip { grid-template-columns: repeat(2, 1fr); }
+  .status-item:nth-child(2) { border-right: 0; }
+  .status-item:nth-child(-n+2) { border-bottom: 1px solid var(--line); }
+  .market-side { grid-template-columns: 1fr; }
+  .market-side .oracle-summary { grid-column: auto; }
+  .metric-grid { grid-template-columns: repeat(2, 1fr); }
+  .metric-card:nth-child(3n) { border-right: 1px solid var(--line); }
+  .metric-card:nth-child(2n) { border-right: 0; }
+  .metric-card:nth-last-child(-n+3) { border-bottom: 1px solid var(--line); }
+  .metric-card:nth-last-child(-n+2) { border-bottom: 0; }
+  .data-sources, .infra-cards { grid-template-columns: 1fr; }
+  .infra-cards .infra-card:last-child { grid-column: auto; }
+  .pipeline { grid-template-columns: repeat(2, 1fr); gap: 1.35rem 0.7rem; padding: 1rem; }
+  .pipeline-step { padding-right: 0.75rem; }
+  .pipeline-step:nth-child(2)::after, .pipeline-step:nth-child(2)::before, .pipeline-step:nth-child(4)::after, .pipeline-step:nth-child(4)::before, .pipeline-step:nth-child(6)::after, .pipeline-step:nth-child(6)::before { display: none; }
+  .pipeline-step:nth-child(3)::after, .pipeline-step:nth-child(3)::before { display: block; }
+  .infra-intro { min-height: auto; }
+  .diagram-canvas { min-height: 280px; transform: scale(0.88); transform-origin: center; }
+  .infra-diagram__body { min-height: 330px; padding: 0.7rem; }
+  .infra-flow { flex-wrap: wrap; }
+  .infra-flow__line { flex-basis: 25%; }
+  .footer-inner { display: block; }
+  .footer-links { margin-top: 0.85rem; }
+}
+
+@media (max-width: 480px) {
+  .brand-wordmark { font-size: 0.82rem; }
+  .market-identity__meta { width: 100%; }
+  .market-header__price { align-items: flex-start; flex-direction: column; gap: 0.7rem; }
+  .price-readout { font-size: clamp(2.8rem, 16vw, 4.2rem); }
+  .chart-toolbar { align-items: flex-start; flex-direction: column; }
+  .chart-wrap { min-height: 270px; padding-inline: 0.35rem; }
+  .chart-svg { height: 250px; }
+  .chart-empty { min-height: 250px; }
+  .oracle-summary__grid { grid-template-columns: 1fr; }
+  .ema-card { align-items: flex-start; flex-wrap: wrap; }
+  .ema-card__value { width: 100%; margin-left: 0; }
+  .diagram-canvas { transform: scale(0.73); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; }
+}

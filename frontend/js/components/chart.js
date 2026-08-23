@@ -1,4 +1,4 @@
-import { escapeHTML, formatPrice, isAvailable } from "../utils.js";
+import { escapeHTML, formatPrice, isAvailable } from "../utils/format.js";
 import { icon } from "./common.js";
 
 function normalizePoints(points) {

@@ -9,29 +9,29 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="css/root.css" />
-    <link rel="stylesheet" href="markets/markets.css" />
-    <link rel="stylesheet" href="css/media.css" />
-    <link rel="icon" type="image/png" href="logo.png" />
+    <link rel="stylesheet" href="../css/root.css" />
+    <link rel="stylesheet" href="markets.css" />
+    <link rel="stylesheet" href="../css/media.css" />
+    <link rel="icon" type="image/png" href="../logo.png" />
   </head>
   <body>
     <a class="skip-link" href="#main-content">Skip to main content</a>
     <div class="app-shell">
       <header class="site-header">
         <div class="header-inner">
-          <a class="brand" href="index.html" aria-label="AustralFinance home"><img class="brand-mark" src="logo.png" alt="" width="34" height="34" /><span class="brand-wordmark">austral<strong>finance</strong><span class="brand-dot">.fi</span></span></a>
+          <a class="brand" href="../index.html" aria-label="AustralFinance home"><img class="brand-mark" src="../logo.png" alt="" width="34" height="34" /><span class="brand-wordmark">austral<strong>finance</strong><span class="brand-dot">.fi</span></span></a>
           <nav class="primary-nav" aria-label="Primary navigation">
-            <a class="nav-link is-active" href="markets/market.html">Markets</a>
-            <a class="nav-link" href="oracle/oracle.html">Oracle</a>
-            <a class="nav-link" href="infra/infrastructure.html">Infrastructure</a>
+            <a class="nav-link is-active" href="market.html">Markets</a>
+            <a class="nav-link" href="../oracle/oracle.html">Oracle</a>
+            <a class="nav-link" href="../infra/infrastructure.html">Infrastructure</a>
           </nav>
           <button class="wallet-button" type="button" data-wallet><span class="icon-slot" data-icon="wallet"></span>Connect Wallet</button>
           <button class="menu-button" type="button" data-menu aria-label="Open navigation" aria-expanded="false"><span></span><span></span><span></span></button>
         </div>
         <nav class="mobile-nav" data-mobile-nav aria-label="Mobile navigation">
-          <a class="nav-link is-active" href="markets/market.html">Markets</a>
-          <a class="nav-link" href="oracle/oracle.html">Oracle</a>
-          <a class="nav-link" href="infra/infrastructure.html">Infrastructure</a>
+          <a class="nav-link is-active" href="market.html">Markets</a>
+          <a class="nav-link" href="../oracle/oracle.html">Oracle</a>
+          <a class="nav-link" href="../infra/infrastructure.html">Infrastructure</a>
           <button class="wallet-button" type="button" data-wallet><span class="icon-slot" data-icon="wallet"></span>Connect Wallet</button>
         </nav>
       </header>
@@ -98,7 +98,7 @@
                     <div class="summary-metric"><span class="summary-metric__label">EMA</span><span class="summary-metric__value"><strong data-oracle-summary="ema">$42.301</strong></span></div>
                     <div class="summary-metric"><span class="summary-metric__label">Breaker</span><span class="summary-metric__value"><strong data-oracle-summary="breaker">CLEAR</strong></span></div>
                   </div>
-                  <a class="oracle-summary__link" href="oracle/oracle.html">View Oracle <span class="icon-slot" data-icon="arrow"></span></a>
+                  <a class="oracle-summary__link" href="../oracle/oracle.html">View Oracle <span class="icon-slot" data-icon="arrow"></span></a>
                   <div data-oracle-summary-notice hidden></div>
                 </div>
               </section>
@@ -106,11 +106,11 @@
           </div>
         </div>
       </main>
-      <footer class="site-footer"><div class="container footer-inner"><p class="footer-copy"><strong>AustralFinance</strong> · perpetual markets and price infrastructure for Argentine assets.</p><nav class="footer-links" aria-label="Footer navigation"><a href="oracle/oracle.html">Oracle</a><a href="infra/infrastructure.html">Infrastructure</a><a href="/health" target="_blank" rel="noreferrer">Health endpoint</a></nav></div></footer>
+      <footer class="site-footer"><div class="container footer-inner"><p class="footer-copy"><strong>AustralFinance</strong> · perpetual markets and price infrastructure for Argentine assets.</p><nav class="footer-links" aria-label="Footer navigation"><a href="../oracle/oracle.html">Oracle</a><a href="../infra/infrastructure.html">Infrastructure</a><a href="/health" target="_blank" rel="noreferrer">Health endpoint</a></nav></div></footer>
       <div class="toast" data-toast role="status" aria-live="polite"></div>
     </div>
     <noscript><main class="noscript-message"><p class="eyebrow">AUSTRAL.FI / SYSTEM</p><h1>JavaScript is required to view AustralFinance.</h1><p>Enable JavaScript to inspect the Market, Oracle and Infrastructure interfaces.</p></main></noscript>
     <script>window.AUSTRAL_CONFIG = window.AUSTRAL_CONFIG || { API_URL: "", USE_DEMO_DATA: true };</script>
-    <script type="module" src="markets/market.js"></script>
+    <script type="module" src="market.js"></script>
   </body>
 </html>

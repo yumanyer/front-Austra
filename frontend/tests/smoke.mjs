@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { normalizeMarket, normalizeOracle } from "../js/api.js";
+import { normalizeMarket, normalizeOracle } from "../js/api/index.js";
 
 const oracle = normalizeOracle({
   price: 42.315,

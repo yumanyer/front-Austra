@@ -3,7 +3,6 @@ const fs = require("node:fs");
 const path = require("node:path");
 
 const root = __dirname;
-const spaRoutes = new Set(["/", "/markets", "/oracle", "/infrastructure"]);
 const mime = {
   ".html": "text/html; charset=utf-8",
   ".css": "text/css; charset=utf-8",
@@ -15,9 +14,9 @@ const mime = {
 
 const server = http.createServer((request, response) => {
   const pathname = decodeURIComponent(new URL(request.url, "http://localhost").pathname);
-  const requested = spaRoutes.has(pathname) ? "/index.html" : pathname;
-  const filePath = path.join(root, requested);
-  if (!filePath.startsWith(root)) {
+  const requested = pathname === "/" ? "/index.html" : pathname;
+  const filePath = path.resolve(root, `.${requested}`);
+  if (!filePath.startsWith(`${root}${path.sep}`)) {
     response.writeHead(403);
     response.end("Forbidden");
     return;

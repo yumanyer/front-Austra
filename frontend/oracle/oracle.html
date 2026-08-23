@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="AustralFinance oracle price engine and validation pipeline." />
+    <meta name="theme-color" content="#0E1B2A" />
+    <title>AustralFinance — Oracle</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="../css/root.css" />
+    <link rel="stylesheet" href="oracle.css" />
+    <link rel="stylesheet" href="../css/media.css" />
+    <link rel="icon" type="image/png" href="../logo.png" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">Skip to main content</a>
+    <div class="app-shell">
+      <header class="site-header">
+        <div class="header-inner">
+          <a class="brand" href="../index.html" aria-label="AustralFinance home"><img class="brand-mark" src="../logo.png" alt="" width="34" height="34" /><span class="brand-wordmark">austral<strong>finance</strong><span class="brand-dot">.fi</span></span></a>
+          <nav class="primary-nav" aria-label="Primary navigation">
+            <a class="nav-link" href="../markets/market.html">Markets</a>
+            <a class="nav-link is-active" href="oracle.html">Oracle</a>
+            <a class="nav-link" href="../infra/infrastructure.html">Infrastructure</a>
+          </nav>
+          <button class="wallet-button" type="button" data-wallet><span class="icon-slot" data-icon="wallet"></span>Connect Wallet</button>
+          <button class="menu-button" type="button" data-menu aria-label="Open navigation" aria-expanded="false"><span></span><span></span><span></span></button>
+        </div>
+        <nav class="mobile-nav" data-mobile-nav aria-label="Mobile navigation">
+          <a class="nav-link" href="../markets/market.html">Markets</a>
+          <a class="nav-link is-active" href="oracle.html">Oracle</a>
+          <a class="nav-link" href="../infra/infrastructure.html">Infrastructure</a>
+          <button class="wallet-button" type="button" data-wallet><span class="icon-slot" data-icon="wallet"></span>Connect Wallet</button>
+        </nav>
+      </header>
+      <div class="sync-strip" role="status"><span class="sync-strip__label">System</span><span data-system-status></span><span class="sync-strip__note" data-system-note>Hardcoded visual fixture · no backend request</span></div>
+      <main class="app-main" id="main-content">
+        <div class="page container" data-page="oracle">
+          <header class="page-header">
+            <div class="page-header__copy">
+              <p class="eyebrow">ORACLE / PRICE ENGINE</p>
+              <h1 class="page-title">Price you can <span class="page-title__accent">audit</span></h1>
+              <p class="page-description">A visual view of how AustralFinance obtains, validates and publishes a reference price for YPF.</p>
+            </div>
+            <div class="page-header__meta"><span data-page-mode></span><span data-page-status></span></div>
+          </header>
+          <div data-oracle-notice hidden></div>
+          <div class="data-sources">
+            <article class="source-card">
+              <div class="source-card__top"><div class="source-card__icon"><span class="icon-slot" data-icon="database"></span></div><span data-source-status="data"></span></div>
+              <h2>Data source</h2><p>Primary price input</p><p>Source identity is displayed only when returned by the backend.</p>
+              <div class="source-card__asset-list"><span class="asset-chip" data-source-name>Data912</span><span class="asset-chip">YPF ADR</span><span class="asset-chip">YPFD BYMA</span></div>
+            </article>
+            <article class="source-card">
+              <div class="source-card__top"><div class="source-card__icon"><span class="icon-slot" data-icon="network"></span></div><span data-source-status="assets"></span></div>
+              <h2>Assets</h2><p>Validation scope</p><p>Argentine asset references used by the oracle pipeline.</p>
+              <div class="source-card__asset-list"><span class="asset-chip">YPF ADR</span><span class="asset-chip">YPFD BYMA</span></div>
+            </article>
+            <article class="source-card">
+              <div class="source-card__top"><div class="source-card__icon"><span class="icon-slot" data-icon="chart"></span></div><span data-source-status="reference"></span></div>
+              <h2>Reference</h2><p>Cross-check</p><p>CCL is shown as a reference only when the service provides it.</p>
+              <div class="source-card__asset-list"><span class="asset-chip">CCL</span><span class="asset-chip">Implied CCL</span></div>
+            </article>
+          </div>
+          <section class="surface pipeline-panel" aria-labelledby="pipeline-title">
+            <div class="surface__header"><div><h2 class="surface-title" id="pipeline-title">Oracle pipeline</h2><p class="surface-subtitle">Each stage is rendered from the oracle payload</p></div></div>
+            <div class="pipeline">
+              <article class="pipeline-step"><span class="pipeline-step__index">01</span><strong class="pipeline-step__name">Data912</strong><span class="pipeline-step__status" data-pipeline-status="data"></span><span class="pipeline-step__timestamp" data-pipeline-detail="data">Data912</span></article>
+              <article class="pipeline-step"><span class="pipeline-step__index">02</span><strong class="pipeline-step__name">Normalize</strong><span class="pipeline-step__status" data-pipeline-status="normalize"></span><span class="pipeline-step__timestamp" data-pipeline-detail="normalize">Normalization status unavailable</span></article>
+              <article class="pipeline-step"><span class="pipeline-step__index">03</span><strong class="pipeline-step__name">CCL Cross-check</strong><span class="pipeline-step__status" data-pipeline-status="cross-check"></span><span class="pipeline-step__timestamp" data-pipeline-detail="cross-check">Cross-check unavailable</span></article>
+              <article class="pipeline-step"><span class="pipeline-step__index">04</span><strong class="pipeline-step__name">Circuit Breaker</strong><span class="pipeline-step__status" data-pipeline-status="breaker"></span><span class="pipeline-step__timestamp" data-pipeline-detail="breaker">Protection status unavailable</span></article>
+              <article class="pipeline-step"><span class="pipeline-step__index">05</span><strong class="pipeline-step__name">EMA</strong><span class="pipeline-step__status" data-pipeline-status="ema"></span><span class="pipeline-step__timestamp" data-pipeline-detail="ema">—</span></article>
+              <article class="pipeline-step"><span class="pipeline-step__index">06</span><strong class="pipeline-step__name">Published Price</strong><span class="pipeline-step__status" data-pipeline-status="price"></span><span class="pipeline-step__timestamp" data-pipeline-detail="price">—</span></article>
+            </div>
+          </section>
+          <div class="oracle-grid">
+            <div class="oracle-stack">
+              <section class="surface" aria-labelledby="oracle-metrics-title">
+                <div class="surface__header"><div><h2 class="surface-title" id="oracle-metrics-title">Oracle metrics</h2><p class="surface-subtitle">Reference values available from the pricing service</p></div></div>
+                <div class="metrics-list">
+                  <div class="metrics-list__row"><span class="metrics-list__label">Last Print</span><span class="metrics-list__value metrics-list__value--strong" data-oracle-metric="lastPrint">$42.32</span></div>
+                  <div class="metrics-list__row"><span class="metrics-list__label">EMA</span><span class="metrics-list__value metrics-list__value--strong" data-oracle-metric="ema">$42.301</span></div>
+                  <div class="metrics-list__row"><span class="metrics-list__label">Bid</span><span class="metrics-list__value metrics-list__value--strong" data-oracle-metric="bid">$42.30</span></div>
+                  <div class="metrics-list__row"><span class="metrics-list__label">Ask</span><span class="metrics-list__value metrics-list__value--strong" data-oracle-metric="ask">$42.34</span></div>
+                  <div class="metrics-list__row"><span class="metrics-list__label">Spread</span><span class="metrics-list__value metrics-list__value--strong" data-oracle-metric="spread">$0.04</span></div>
+                  <div class="metrics-list__row"><span class="metrics-list__label">CCL</span><span class="metrics-list__value metrics-list__value--strong" data-oracle-metric="ccl">$1,180.00</span></div>
+                  <div class="metrics-list__row"><span class="metrics-list__label">Implied CCL</span><span class="metrics-list__value metrics-list__value--strong" data-oracle-metric="impliedCcl">$1,181.20</span></div>
+                  <div class="metrics-list__row"><span class="metrics-list__label">Market Open</span><span class="metrics-list__value metrics-list__value--strong" data-oracle-metric="marketOpen">Yes</span></div>
+                  <div class="metrics-list__row"><span class="metrics-list__label">Source</span><span class="metrics-list__value metrics-list__value--strong" data-oracle-metric="source">Data912</span></div>
+                  <div class="metrics-list__row"><span class="metrics-list__label">Freshness</span><span class="metrics-list__value metrics-list__value--strong" data-oracle-metric="freshness">3s ago</span></div>
+                  <div class="metrics-list__row"><span class="metrics-list__label">Status</span><span class="metrics-list__value metrics-list__value--strong" data-oracle-metric="status">VALID</span></div>
+                </div>
+              </section>
+              <section class="ema-card" aria-labelledby="ema-title"><div class="ema-card__icon"><span class="icon-slot" data-icon="chart"></span></div><div><h2 id="ema-title">EMA</h2><p>Exponential Moving Average. Used as a stability reference for the circuit breaker and as fallback outside market hours.</p></div><span class="ema-card__value" data-ema-value>$42.301</span></section>
+            </div>
+            <div class="oracle-stack">
+              <section class="surface" aria-labelledby="breaker-title">
+                <div class="surface__header"><div><h2 class="surface-title" id="breaker-title">Circuit breaker</h2><p class="surface-subtitle">A protection mechanism, not an error state</p></div></div>
+                <div class="surface__body circuit-panel__body">
+                  <div class="circuit-state"><div class="circuit-state__icon" data-breaker-icon><span class="icon-slot" data-icon="check"></span></div><div><h2 class="circuit-state__title" data-breaker-status>CLEAR</h2><p class="circuit-state__description" data-breaker-description>Circuit breaker state received from backend.</p></div></div>
+                  <div class="circuit-bars">
+                    <div class="circuit-bar"><div class="circuit-bar__head"><span>Threshold</span><strong data-breaker-value="threshold">10.00%</strong></div><div class="circuit-bar__track"><div class="circuit-bar__fill" data-breaker-fill="threshold" style="width:10%"></div></div></div>
+                    <div class="circuit-bar"><div class="circuit-bar__head"><span>Current deviation</span><strong data-breaker-value="deviation">1.80%</strong></div><div class="circuit-bar__track"><div class="circuit-bar__fill circuit-bar__fill--green" data-breaker-fill="deviation" style="width:9%"></div></div></div>
+                    <div class="circuit-bar"><div class="circuit-bar__head"><span>Release ticks</span><strong data-breaker-value="releaseTicks">3 / 3</strong></div><div class="circuit-bar__track"><div class="circuit-bar__fill circuit-bar__fill--green" data-breaker-fill="releaseTicks" style="width:100%"></div></div></div>
+                  </div>
+                </div>
+              </section>
+              <div class="notice"><span class="icon-slot" data-icon="info"></span><span>Index Price is the oracle reference. Mark Price belongs to the perpetual market mechanism and is intentionally displayed separately on Market.</span></div>
+            </div>
+          </div>
+        </div>
+      </main>
+      <footer class="site-footer"><div class="container footer-inner"><p class="footer-copy"><strong>AustralFinance</strong> · perpetual markets and price infrastructure for Argentine assets.</p><nav class="footer-links" aria-label="Footer navigation"><a href="../oracle/oracle.html">Oracle</a><a href="../infra/infrastructure.html">Infrastructure</a><a href="/health" target="_blank" rel="noreferrer">Health endpoint</a></nav></div></footer>
+      <div class="toast" data-toast role="status" aria-live="polite"></div>
+    </div>
+    <noscript><main class="noscript-message"><p class="eyebrow">AUSTRAL.FI / SYSTEM</p><h1>JavaScript is required to view AustralFinance.</h1><p>Enable JavaScript to inspect the Market, Oracle and Infrastructure interfaces.</p></main></noscript>
+    <script>window.AUSTRAL_CONFIG = window.AUSTRAL_CONFIG || { API_URL: "", USE_DEMO_DATA: true };</script>
+    <script type="module" src="oracle.js"></script>
+  </body>
+</html>

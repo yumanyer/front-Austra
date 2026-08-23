@@ -1,45 +1,19 @@
-import { loadSnapshot } from "./api.js";
 import { DEMO_SNAPSHOT } from "./demo-data.js";
 
-export function createAppState() {
-  const state = {
-    route: "/",
-    loading: true,
-    lastRefresh: null,
-    snapshot: {
-      health: { status: "loading", data: null, error: null },
-      oracle: { status: "loading", data: null, error: null },
-      market: { status: "loading", data: null, error: null },
-    },
-    listeners: new Set(),
-  };
+const UNAVAILABLE_SNAPSHOT = {
+  mode: "unavailable",
+  health: { status: "error", data: null, error: "Backend integration is not configured" },
+  oracle: { status: "error", data: null, error: "Oracle integration is not configured" },
+  market: { status: "error", data: null, error: "Market integration is not configured" },
+  fetchedAt: null,
+};
 
-  return {
-    get() {
-      return state;
-    },
-    subscribe(listener) {
-      state.listeners.add(listener);
-      return () => state.listeners.delete(listener);
-    },
-    setRoute(route) {
-      state.route = route;
-      notify();
-    },
-    async refresh() {
-      state.loading = true;
-      notify();
-      const useDemo = window.AUSTRAL_CONFIG?.USE_DEMO_DATA === true;
-      const snapshot = useDemo ? JSON.parse(JSON.stringify(DEMO_SNAPSHOT)) : await loadSnapshot();
-      state.snapshot = snapshot;
-      state.loading = false;
-      state.lastRefresh = snapshot.fetchedAt;
-      notify();
-      return snapshot;
-    },
-  };
+function clone(value) {
+  return JSON.parse(JSON.stringify(value));
+}
 
-  function notify() {
-    state.listeners.forEach((listener) => listener(state));
-  }
+export async function loadPageSnapshot() {
+  // Keep the visual fixture as the default until a later integration phase.
+  if (window.AUSTRAL_CONFIG?.USE_DEMO_DATA !== false) return clone(DEMO_SNAPSHOT);
+  return clone(UNAVAILABLE_SNAPSHOT);
 }

@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="AustralFinance infrastructure data flow and publication map." />
+    <meta name="theme-color" content="#0E1B2A" />
+    <title>AustralFinance — Infrastructure</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="../css/root.css" />
+    <link rel="stylesheet" href="infra.css" />
+    <link rel="stylesheet" href="../css/media.css" />
+    <link rel="icon" type="image/png" href="../logo.png" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">Skip to main content</a>
+    <div class="app-shell">
+      <header class="site-header">
+        <div class="header-inner">
+          <a class="brand" href="../index.html" aria-label="AustralFinance home"><img class="brand-mark" src="../logo.png" alt="" width="34" height="34" /><span class="brand-wordmark">austral<strong>finance</strong><span class="brand-dot">.fi</span></span></a>
+          <nav class="primary-nav" aria-label="Primary navigation">
+            <a class="nav-link" href="../markets/market.html">Markets</a>
+            <a class="nav-link" href="../oracle/oracle.html">Oracle</a>
+            <a class="nav-link is-active" href="infrastructure.html">Infrastructure</a>
+          </nav>
+          <button class="wallet-button" type="button" data-wallet><span class="icon-slot" data-icon="wallet"></span>Connect Wallet</button>
+          <button class="menu-button" type="button" data-menu aria-label="Open navigation" aria-expanded="false"><span></span><span></span><span></span></button>
+        </div>
+        <nav class="mobile-nav" data-mobile-nav aria-label="Mobile navigation">
+          <a class="nav-link" href="../markets/market.html">Markets</a>
+          <a class="nav-link" href="../oracle/oracle.html">Oracle</a>
+          <a class="nav-link is-active" href="infrastructure.html">Infrastructure</a>
+          <button class="wallet-button" type="button" data-wallet><span class="icon-slot" data-icon="wallet"></span>Connect Wallet</button>
+        </nav>
+      </header>
+      <div class="sync-strip" role="status"><span class="sync-strip__label">System</span><span data-system-status></span><span class="sync-strip__note" data-system-note>Hardcoded visual fixture · no backend request</span></div>
+      <main class="app-main" id="main-content">
+        <div class="page container" data-page="infrastructure">
+          <header class="page-header">
+            <div class="page-header__copy">
+              <p class="eyebrow">INFRASTRUCTURE / DATA FLOW</p>
+              <h1 class="page-title">From price to <span class="page-title__accent">protocol</span></h1>
+              <p class="page-description">A system map of how the Oracle Engine can publish a validated YPF price to HIP-3 / HyperCore and to the auditable AssetOracle / HyperEVM mirror.</p>
+            </div>
+            <div class="page-header__meta"><span data-page-mode></span><span data-page-status></span></div>
+          </header>
+          <div data-infra-notice hidden></div>
+          <div class="infra-hero">
+            <section class="surface infra-diagram" aria-labelledby="architecture-title">
+              <div class="surface__header"><div><h2 class="surface-title">Architecture map</h2><p class="surface-subtitle">The Oracle Engine publishes to two independent on-chain destinations</p></div></div>
+              <div class="infra-diagram__body">
+                <div class="diagram-canvas" id="architecture-title">
+                  <div class="diagram-node diagram-node--root"><div><strong>AUSTRAL.FI</strong><span>product layer</span></div></div>
+                  <div class="diagram-node diagram-node--engine"><div><strong>ORACLE ENGINE</strong><span>price publication</span></div></div>
+                  <div class="diagram-node diagram-node--hip"><div><strong>HIP-3</strong><span>arg / publisher</span></div></div>
+                  <div class="diagram-node diagram-node--core"><div><strong>HYPERCORE</strong><span>YPF-PERP</span></div></div>
+                  <div class="diagram-node diagram-node--asset"><div><strong>ASSETORACLE</strong><span>price mirror</span></div></div>
+                  <div class="diagram-node diagram-node--evm"><div><strong>HYPEREVM</strong><span>auditable mirror</span></div></div>
+                  <span class="diagram-connector diagram-connector--root" aria-hidden="true"></span>
+                  <span class="diagram-connector diagram-connector--left diagram-connector--arrow-left" aria-hidden="true"></span>
+                  <span class="diagram-connector diagram-connector--right diagram-connector--arrow-right" aria-hidden="true"></span>
+                  <span class="diagram-connector diagram-connector--core" aria-hidden="true"></span>
+                  <span class="diagram-connector diagram-connector--evm" aria-hidden="true"></span>
+                </div>
+                <p class="diagram-caption">AssetOracle is an auditable HyperEVM mirror. It is not represented as the direct feed consumed by HyperCore.</p>
+              </div>
+            </section>
+            <aside class="surface infra-intro"><div><span class="infra-intro__number">02</span><h2>Two delivery paths</h2><p>The Oracle Engine is the source of truth for both branches. HyperCore hosts the perpetual market path; HyperEVM mirrors the published value through AssetOracle.</p></div><div class="infra-intro__legend"><div class="legend-status"><span class="legend-status__marker"></span>Market delivery: HIP-3 → HyperCore</div><div class="legend-status"><span class="legend-status__marker legend-status__marker--amber"></span>Audit mirror: AssetOracle → HyperEVM</div></div></aside>
+          </div>
+          <div class="infra-flow"><span class="infra-flow__label">Data flow</span><span class="infra-flow__path">Data912</span><span class="infra-flow__line"></span><span class="infra-flow__path">Oracle Engine</span><span class="infra-flow__line"></span><span class="infra-flow__path">HIP-3 / HyperCore</span><span class="infra-flow__line"></span><span class="infra-flow__path">AssetOracle / HyperEVM</span></div>
+          <section aria-labelledby="components-title"><div class="surface__header surface__header--no-border"><div><h2 class="surface-title" id="components-title">Infrastructure components</h2><p class="surface-subtitle">Operational identity and status are separate from the market status.</p></div></div><div class="infra-cards">
+            <article class="infra-card infra-card--source"><div class="infra-card__top"><div><h2>Data912</h2><p class="infra-card__tag">Data source</p></div><span data-infra-status="source"></span></div><ul class="infra-card__list"><li>YPF ADR</li><li>YPFD BYMA</li><li>CCL</li></ul><div class="infra-card__footer"><span>Oracle input</span><span data-infra-origin="source">fixture</span></div></article>
+            <article class="infra-card infra-card--engine"><div class="infra-card__top"><div><h2>Oracle Engine</h2><p class="infra-card__tag">Pricing layer</p></div><span data-infra-status="engine"></span></div><ul class="infra-card__list"><li>Normalization</li><li>CCL validation</li><li>EMA</li><li>Circuit breaker</li></ul><div class="infra-card__footer"><span>Price authority</span><span data-infra-origin="engine">fixture</span></div></article>
+            <article class="infra-card infra-card--core"><div class="infra-card__top"><div><h2>HIP-3</h2><p class="infra-card__tag">Hyperliquid DEX / arg</p></div><span data-infra-status="hip"></span></div><ul class="infra-card__list"><li>DEX: arg</li><li>Market: YPF-PERP</li><li>Publisher: setOracle</li></ul><div class="infra-card__footer"><span>Market branch</span><span data-infra-origin="hip">fixture</span></div></article>
+            <article class="infra-card infra-card--core"><div class="infra-card__top"><div><h2>HyperCore</h2><p class="infra-card__tag">Perpetual market</p></div><span data-infra-status="core"></span></div><ul class="infra-card__list"><li>YPF-PERP</li><li>On-chain market</li><li>Receives Oracle publication</li></ul><div class="infra-card__footer"><span>Execution layer</span><span data-infra-origin="core">fixture</span></div></article>
+            <article class="infra-card infra-card--evm"><div class="infra-card__top"><div><h2>HyperEVM</h2><p class="infra-card__tag">AssetOracle</p></div><span data-infra-status="evm"></span></div><ul class="infra-card__list"><li>Price mirror</li><li>Auditable surface</li><li>Independent EVM branch</li></ul><div class="infra-card__footer"><span>Mirror branch</span><span data-infra-origin="evm">fixture</span></div></article>
+          </div></section>
+        </div>
+      </main>
+      <footer class="site-footer"><div class="container footer-inner"><p class="footer-copy"><strong>AustralFinance</strong> · perpetual markets and price infrastructure for Argentine assets.</p><nav class="footer-links" aria-label="Footer navigation"><a href="../oracle/oracle.html">Oracle</a><a href="infrastructure.html">Infrastructure</a><a href="/health" target="_blank" rel="noreferrer">Health endpoint</a></nav></div></footer>
+      <div class="toast" data-toast role="status" aria-live="polite"></div>
+    </div>
+    <noscript><main class="noscript-message"><p class="eyebrow">AUSTRAL.FI / SYSTEM</p><h1>JavaScript is required to view AustralFinance.</h1><p>Enable JavaScript to inspect the Market, Oracle and Infrastructure interfaces.</p></main></noscript>
+    <script>window.AUSTRAL_CONFIG = window.AUSTRAL_CONFIG || { API_URL: "", USE_DEMO_DATA: true };</script>
+    <script type="module" src="infrastructure.js"></script>
+  </body>
+</html>

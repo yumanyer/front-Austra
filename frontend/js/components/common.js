@@ -1,4 +1,4 @@
-import { escapeHTML, formatPrice, modeBadge, statusBadge, valueOrDash } from "../utils.js";
+import { escapeHTML, formatPrice, modeBadge, statusBadge, valueOrDash } from "../utils/format.js";
 
 export function icon(name, className = "") {
   const paths = {
