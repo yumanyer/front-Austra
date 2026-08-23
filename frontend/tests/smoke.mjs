@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { normalizeMarket, normalizeOracle } from "../js/api.js";
+import { loadSnapshot, normalizeMarket, normalizeOracle } from "../js/api.js";
 
 const oracle = normalizeOracle({
   price: 42.315,
@@ -33,4 +33,36 @@ assert.equal(market.indexPrice, 42.315);
 assert.equal(market.history.length, 1);
 assert.equal(market.volume24h, undefined);
 
-console.log("AustralFinance API normalization smoke test passed");
+const requestedPaths = [];
+globalThis.window = {
+  AUSTRAL_CONFIG: { API_URL: "https://api.example.test", USE_DEMO_DATA: false },
+  setTimeout,
+  clearTimeout,
+};
+globalThis.fetch = async (url) => {
+  requestedPaths.push(url);
+  const payloads = {
+    "https://api.example.test/health": { status: "CONNECTED", version: "test" },
+    "https://api.example.test/oracle/price/YPF": { price: 42.5, status: "VALID" },
+    "https://api.example.test/market/YPF-PERP": { markPrice: 42.5, marketStatus: "LIVE" },
+  };
+  return {
+    ok: true,
+    async json() {
+      return payloads[url];
+    },
+  };
+};
+
+const snapshot = await loadSnapshot();
+assert.deepEqual(requestedPaths.sort(), [
+  "https://api.example.test/health",
+  "https://api.example.test/market/YPF-PERP",
+  "https://api.example.test/oracle/price/YPF",
+]);
+assert.equal(snapshot.health.data.status, "CONNECTED");
+assert.equal(snapshot.oracle.data.price, 42.5);
+assert.equal(snapshot.market.data.markPrice, 42.5);
+assert.ok(snapshot.fetchedAt);
+
+console.log("AustralFinance API normalization and snapshot smoke test passed");
