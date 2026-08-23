@@ -1,14 +1,14 @@
 # Fase 2 — Data Layer del frontend
 
-> **Estado del documento:** especificación operativa y análisis de brecha. Esta entrega es exclusivamente documental; no implementa cambios de código ni conexiones de red.
+> **Estado del documento:** implementación de la Data Layer y registro de validación end-to-end. El backend local fue auditado; Health responde correctamente y Oracle/Market conservan sus errores HTTP cuando Data912 no está disponible.
 
 ## 1. Propósito y alcance
 
 La Fase 2 tiene como objetivo preparar el frontend de AustralFinance para consumir el backend real mediante una capa de datos desacoplada. La interfaz visual ya fue reorganizada y aprobada en el commit [`9f192c6f`](https://github.com/yumanyer/front-Austra/commit/9f192c6f), identificado como `UUXX`. El alcance de este documento es establecer el estado real de esa base, describir las piezas que ya existen, registrar las brechas frente a la especificación vigente y dejar definido el diseño técnico que deberá implementarse en una fase de código posterior.
 
-Durante esta entrega no se modifican los archivos existentes. En particular, no se tocan HTML visual, CSS, layout, tipografías, colores, espaciados, responsive, iconos, backend, contratos, blockchain o wallet. Tampoco se realizan requests contra `/health`, `/oracle/price/YPF` o `/market/YPF-PERP`.
+En esta implementación se modificó únicamente el frontend dentro del alcance de la Data Layer. No se tocaron HTML visual, CSS, layout, tipografías, colores, espaciados, responsive, iconos, backend, contratos, blockchain o wallet. El código queda preparado para realizar requests contra `/health`, `/oracle/price/YPF` y `/market/YPF-PERP` cuando `USE_DEMO_DATA` sea `false`.
 
-La especificación de referencia es la continuación de Fase 2 contenida en `pasted_content_3.txt`, que a su vez toma `pasted_content_2.txt` como contexto vigente. El estado observado corresponde al working tree limpio posterior al commit `UUXX`.
+La especificación de referencia vigente es `pasted_content_5.txt`, con `pasted_content_4.txt` como contexto inmediato de implementación. El estado observado incluye el backend local sincronizado y el frontend sobre el que se aplicó la Data Layer.
 
 ## 2. Estado actual observado
 
@@ -18,23 +18,23 @@ La base ya contiene HTML real por interfaz, hojas CSS separadas, scripts especí
 |---|---|---|---|
 | HTML por página | Implementado | [`markets/market.html`](../markets/market.html), [`oracle/oracle.html`](../oracle/oracle.html), [`infra/infrastructure.html`](../infra/infrastructure.html) | Base correcta; no requiere rediseño |
 | CSS global y responsive | Implementado | [`css/root.css`](../css/root.css), [`css/media.css`](../css/media.css) | Fuera del alcance de esta fase documental |
-| JavaScript por página | Implementado | [`markets/market.js`](../markets/market.js), [`oracle/oracle.js`](../oracle/oracle.js), [`infra/infrastructure.js`](../infra/infrastructure.js) | Debe conectarse posteriormente a un estado compartido |
+| JavaScript por página | Implementado | [`markets/market.js`](../markets/market.js), [`oracle/oracle.js`](../oracle/oracle.js), [`infra/infrastructure.js`](../infra/infrastructure.js) | Consume snapshot normalizado y actualiza el DOM existente |
 | Componentes comunes | Implementado | [`js/components/common.js`](../js/components/common.js), [`js/components/chart.js`](../js/components/chart.js) | Reutilizables; no deben incorporar transporte de backend |
-| Utilidades | Implementado parcialmente | [`js/utils/format.js`](../js/utils/format.js) | Requiere política central para tiempo, unidades y estados |
-| Normalización | Implementado parcialmente | [`js/api/index.js`](../js/api/index.js) | Cubre algunos campos Oracle, Market y Health, pero no el contrato completo |
-| API client | No implementado | No existe `client.js` ni una función de transporte activa | Pendiente de implementación posterior |
-| Catálogo de endpoints | No implementado | No existe `endpoints.js` | Pendiente de implementación posterior |
-| Configuración de API | Sólo fixture local | `window.AUSTRAL_CONFIG` conserva `USE_DEMO_DATA` | Debe centralizarse antes de conectar backend |
-| Estado compartido | Parcial | [`js/state.js`](../js/state.js) expone `loadPageSnapshot()` | No representa todavía `loading`, `lastRefresh` y snapshot real compartido |
+| Utilidades | Implementado | [`js/utils/format.js`](../js/utils/format.js), [`js/utils/time.js`](../js/utils/time.js) | Formateo y timestamps centralizados |
+| Normalización | Implementado | [`js/api/normalize.js`](../js/api/normalize.js) | Modelos Health, Oracle y Market con campos opcionales explícitos |
+| API client | Implementado | [`js/api/client.js`](../js/api/client.js) | Transporte central con timeout, AbortController y errores clasificados |
+| Catálogo de endpoints | Implementado | [`js/api/endpoints.js`](../js/api/endpoints.js) | Rutas centralizadas sin duplicación en page controllers |
+| Configuración de API | Implementado | [`js/api/config.js`](../js/api/config.js) | `API_URL`, `USE_DEMO_DATA` y timeout centralizados |
+| Estado compartido | Implementado | [`js/state.js`](../js/state.js) | `loading`, `lastRefresh`, snapshot, refresh deduplicado y errores parciales |
 | Demo mode | Implementado | [`js/demo-data.js`](../js/demo-data.js) y `loadPageSnapshot()` | Debe mantenerse aislado del modo real |
-| Manejo de errores | Parcial | `emptyNotice()` y `statusBadge()` existen | Falta distinguir categorías de error del transporte y validación |
-| Tests | Parcial | [`tests/smoke.mjs`](../tests/smoke.mjs) | Faltan pruebas de Health, tiempo, breaker, CCL y campos ausentes |
+| Manejo de errores | Implementado | [`js/api/client.js`](../js/api/client.js), `emptyNotice()` y `statusBadge()` | Códigos de configuración, red, timeout, abort, HTTP, JSON y payload |
+| Tests | Implementado | [`tests/smoke.mjs`](../tests/smoke.mjs) | Cubre Health, Oracle, Market, tiempo, breaker, CCL, ausencias, errores y modos |
 | Blockchain | Deliberadamente no integrado | [`js/blockchain/README.md`](../js/blockchain/README.md) | Debe permanecer sin integración |
 | Wallet | Deliberadamente no integrado | [`js/wallet/README.md`](../js/wallet/README.md) | Debe permanecer sin integración |
 
-## 3. Arquitectura objetivo documentada
+## 3. Arquitectura implementada
 
-La separación buscada para la siguiente implementación de código es la siguiente:
+La separación implementada en el frontend es la siguiente:
 
 ```text
 HTML estático
@@ -75,7 +75,7 @@ Market / Oracle / Infrastructure
 Hidratación del DOM existente
 ```
 
-La estructura conceptual recomendada para `frontend/js/api/` es la siguiente. Los nombres se documentan como responsabilidades, no como una instrucción para modificar archivos en esta entrega.
+La estructura implementada para `frontend/js/api/` es la siguiente:
 
 | Módulo conceptual | Responsabilidad | No debe contener |
 |---|---|---|
@@ -330,7 +330,7 @@ Una carga de snapshot
        snapshot compartido
 ```
 
-El estado actual de [`js/state.js`](../js/state.js) sólo expone `loadPageSnapshot()`: devuelve el fixture cuando el modo demo está activo y un snapshot no disponible cuando se solicita modo real. Esto evita conexiones no autorizadas en la base actual, pero todavía no constituye el flujo de API real de la Fase 2. La diferencia queda registrada como pendiente de implementación, no como un defecto que deba resolverse en esta entrega documental.
+[`js/state.js`](../js/state.js) implementa un store compartido con `loading`, `lastRefresh`, snapshot normalizado, suscripciones y deduplicación de refresh. En demo mode carga el fixture a través de los mismos normalizadores; en real mode invoca una sola vez la API pública de [`js/api/index.js`](../js/api/index.js) y conserva el estado individual de cada recurso cuando alguno falla.
 
 ## 12. Demo mode y modo real
 
@@ -387,9 +387,9 @@ Las funciones existentes `safeErrorMessage`, `emptyNotice` y `statusBadge` deben
 
 El `innerHTML` queda reservado para piezas pequeñas realmente reutilizables, como un badge, un aviso seguro o el SVG del chart si el componente lo necesita. No debe utilizarse para reconstruir páginas completas ni para reemplazar el shell visual.
 
-## 15. Tests documentados como pendientes
+## 15. Tests implementados y ejecutados
 
-Los smoke tests actuales cubren una parte de `normalizeOracle()` y `normalizeMarket()`, pero todavía no cubren el contrato completo de la Fase 2. La matriz mínima futura es la siguiente:
+El smoke test actual cubre la normalización y el comportamiento de la Data Layer sin requerir un backend activo. La cobertura implementada incluye:
 
 | Suite | Casos requeridos |
 |---|---|
@@ -406,51 +406,50 @@ Los smoke tests actuales cubren una parte de `normalizeOracle()` y `normalizeMar
 
 Los tests deben seguir siendo unitarios o de normalización y no deben requerir que el backend esté ejecutándose. Cualquier test HTTP deberá pertenecer a una suite de integración separada y explícita, fuera del smoke test básico.
 
-## 16. Criterios de aceptación de la implementación futura
+## 16. Criterios de aceptación de la implementación
 
-La siguiente lista debe utilizarse cuando se autorice una fase de cambios de código. En esta entrega se marca el estado documental actual, no una ejecución de esos cambios.
+La siguiente lista registra el estado de la implementación actual. El contrato backend local fue inspeccionado; la única limitación de runtime observada fue la indisponibilidad del upstream Data912 durante el arranque del Oracle.
 
 | Criterio | Estado documental actual |
 |---|---|
 | El diseño visual se mantiene sin cambios | **Base existente aprobada; no se toca** |
 | El HTML continúa siendo responsable de la estructura | **Cumplido en la base actual** |
-| Los scripts hidratan el DOM existente | **Cumplido en la base actual, sujeto a conectar state real** |
+| Los scripts hidratan el DOM existente | **Implementado mediante snapshot normalizado** |
 | No se generan páginas completas con JavaScript | **Cumplido en la base actual** |
-| Existe una API/data layer separada | **Parcial: existe normalización, falta client/endpoints activos** |
-| No hay URLs backend duplicadas | **Pendiente de definir catálogo central** |
-| `/health` está normalizado | **Parcial: sólo status/version/raw** |
-| `/oracle/price/YPF` está normalizado | **Parcial: faltan campos y adaptaciones** |
-| `/market/YPF-PERP` está normalizado | **Parcial: faltan symbol, hip3 y políticas de campos opcionales** |
-| Timestamps correctamente normalizados | **Pendiente** |
-| Circuit Breaker adaptado sin inventar información | **Pendiente** |
-| CCL tratado explícitamente | **Pendiente de política y tests** |
-| Campos inexistentes no se rellenan con demo | **Regla definida; debe cubrirse en modo real** |
+| Existe una API/data layer separada | **Implementado: config, endpoints, client, normalize e index** |
+| No hay URLs backend duplicadas | **Implementado mediante `endpoints.js` y `config.js`** |
+| `/health` está normalizado | **Implementado con status, timestamp, oracle, breaker, hip3 y pusher opcionales** |
+| `/oracle/price/YPF` está normalizado | **Implementado con Oracle, CCL, timestamps, breaker y pipeline opcional** |
+| `/market/YPF-PERP` está normalizado | **Implementado con Market, hip3, histórico y campos opcionales** |
+| Timestamps correctamente normalizados | **Implementado y cubierto por tests** |
+| Circuit Breaker adaptado sin inventar información | **Implementado; deriva `FROZEN` sólo con `frozen === true`** |
+| CCL tratado explícitamente | **Implementado; `ccl` no se deriva de `reportedCcl`** |
+| Campos inexistentes no se rellenan con demo | **Implementado en normalizadores y cubierto por tests** |
 | Demo mode funciona | **Cumplido en la base actual** |
-| Real mode queda preparado | **Parcial: falta transporte, contrato y snapshot real** |
-| Market consume modelo normalizado | **Parcial: todavía consulta algunas propiedades `raw` del snapshot** |
-| Oracle consume modelo normalizado | **Parcial: todavía consulta `raw` para etapas del pipeline** |
-| Infrastructure consume datos disponibles | **Parcial: aún deriva estados desde `raw`** |
+| Real mode queda preparado | **Implementado y probado contra backend local; Oracle/Market devuelven error HTTP sin fallback demo** |
+| Market consume modelo normalizado | **Implementado; no accede a `raw`** |
+| Oracle consume modelo normalizado | **Implementado; no accede a `raw`** |
+| Infrastructure consume datos disponibles | **Implementado desde Health, Oracle y Market normalizados** |
 | Blockchain sigue sin integración | **Cumplido y debe preservarse** |
 | Wallet sigue sin integración | **Cumplido y debe preservarse** |
-| Smoke tests cubren adaptaciones | **Pendiente** |
-| `node --check` continúa pasando | **Validado en el commit base; repetir tras cambios futuros** |
-| README describe arquitectura y limitaciones | **Parcial: requiere incorporar este contrato documental** |
+| Smoke tests cubren adaptaciones | **Implementado y ejecutado** |
+| `node --check` continúa pasando | **Validado para los módulos relevantes** |
+| README describe arquitectura y limitaciones | **Implementado en `frontend/README.md`** |
 | Backend no se modifica | **Regla vigente** |
 | No se implementa deployment | **Regla vigente** |
 
-## 17. Secuencia recomendada para una futura implementación
-
-Cuando se autorice modificar código, el orden seguro es: primero confirmar el contrato real de los tres endpoints; luego implementar el catálogo de rutas y el cliente HTTP; después completar los normalizadores de Health, Oracle y Market; a continuación construir el snapshot compartido con loading y errores clasificados; posteriormente adaptar cada página para consumir sólo el modelo normalizado; y finalmente ampliar los smoke tests y ejecutar la validación visual.
+## 17. Validación contra el backend real
+La implementación se ejecutó sobre la copia local completa y el backend fue utilizado como fuente de verdad. Se confirmaron las rutas parametrizadas `GET /health`, `GET /oracle/price/:symbol` y `GET /market/:symbol`, sus parámetros `YPF` y `YPF-PERP`, timestamps Unix en segundos, los modelos Oracle/Market y los subobjetos Health. En runtime, `/health` respondió `200`; `/oracle/price/YPF` y `/market/YPF-PERP` respondieron `503 Oracle not ready yet` porque las llamadas externas a Data912 fallaron en este entorno. El frontend clasifica esos `503` como `http`, conserva el snapshot parcial y no usa demo como fallback.
 
 Durante esa implementación se deberá revisar el diff para confirmar que no cambien HTML visual, CSS, responsive, iconos o textos que no sean estrictamente necesarios para mostrar datos reales. Blockchain, wallet, contratos, ABI, RPC, Web3, HyperEVM, HyperCore, VPS, Nginx, dominio, HTTPS y deployment permanecen fuera de esta fase.
 
 ## 18. Registro de esta entrega
 
-Esta entrega añade únicamente este documento técnico. No se modificaron archivos de código, estilos, HTML, servidor, tests existentes, backend, contratos, blockchain ni wallet. Tampoco se ejecutaron requests contra el backend real. El commit deberá contener solamente la documentación de la Fase 2 y utilizar un mensaje descriptivo que refleje ese alcance.
+Esta implementación modifica únicamente archivos del frontend dentro del alcance de la Data Layer: configuración, endpoints, cliente HTTP, normalización, estado, utilidad temporal, controladores de página, tests y documentación. No se modificaron backend, contracts, blockchain ni wallet. El modo demo sigue sin requests; el modo real fue probado contra el backend local y conserva correctamente los errores HTTP de Oracle/Market provocados por la dependencia externa Data912.
 
 ## Referencias
 
-1. [Especificación vigente de continuación de Fase 2 — `pasted_content_3.txt`](https://github.com/yumanyer/front-Austra/commit/9f192c6f)
+1. [Especificación vigente de implementación — `pasted_content_5.txt`](https://github.com/yumanyer/front-Austra/commit/9f192c6f)
 2. [Commit base del refactor estructural `UUXX`](https://github.com/yumanyer/front-Austra/commit/9f192c6f)
 3. [API/data layer actual](../js/api/index.js)
 4. [Estado actual del frontend](../js/state.js)

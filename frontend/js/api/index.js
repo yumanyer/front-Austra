@@ -1,67 +1,71 @@
-import { firstValue, isAvailable } from "../utils/format.js";
+import { DEMO_SNAPSHOT } from "../demo-data.js";
+import { safeErrorMessage } from "../utils/format.js";
+import { getConfig, isDemoMode } from "./config.js";
+import { requestJson, ApiError } from "./client.js";
+import { HEALTH, ORACLE_PRICE, MARKET } from "./endpoints.js";
+import { normalizeHealth, normalizeMarket, normalizeOracle } from "./normalize.js";
 
-function unwrapPayload(payload, keys = []) {
-  if (!payload || typeof payload !== "object") return {};
-  for (const key of keys) {
-    if (payload[key] && typeof payload[key] === "object") return payload[key];
+function clone(value) {
+  return JSON.parse(JSON.stringify(value));
+}
+
+function ensureJsonObject(payload) {
+  if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+    throw new ApiError("invalid_payload", "Backend payload is not a JSON object");
   }
-  if (payload.data && typeof payload.data === "object") return payload.data;
   return payload;
 }
 
-export function normalizeOracle(payload) {
-  const source = unwrapPayload(payload, ["oracle", "price"]);
-  const crossCheck = unwrapPayload(source, ["crossCheck", "cross_check", "cclCheck"]);
-  const breaker = unwrapPayload(source, ["circuitBreaker", "circuit_breaker", "breaker"]);
+function normalizeDemoSnapshot() {
+  const demo = clone(DEMO_SNAPSHOT);
+  const oracleInput = { ...demo.oracle.data, ...(demo.oracle.data?.raw || {}) };
+  const marketInput = { ...demo.market.data, ...(demo.market.data?.raw || {}) };
   return {
-    price: firstValue(source, ["price", "oraclePrice", "publishedPrice"]),
-    ema: firstValue(source, ["ema", "EMA"]),
-    lastPrint: firstValue(source, ["lastPrint", "last_print", "last"]),
-    bid: firstValue(source, ["bid"]),
-    ask: firstValue(source, ["ask"]),
-    spread: firstValue(source, ["spread"]),
-    ccl: firstValue(source, ["ccl", "CCL", "crossCheckCcl", "cross_check_ccl"]) ?? firstValue(crossCheck, ["ccl", "value", "price"]),
-    impliedCcl: firstValue(source, ["impliedCcl", "implied_ccl"]) ?? firstValue(crossCheck, ["impliedCcl", "implied_ccl"]),
-    crossCheck: firstValue(source, ["crossCheckStatus", "cross_check_status", "cclStatus"]) ?? firstValue(crossCheck, ["status", "result"]),
-    status: firstValue(source, ["status", "oracleStatus"]),
-    source: firstValue(source, ["source", "dataSource"]),
-    marketOpen: firstValue(source, ["marketOpen", "market_open"]),
-    freshness: firstValue(source, ["freshness", "updatedAt", "updated_at", "timestamp", "lastUpdated"]),
-    circuitBreaker: {
-      status: firstValue(breaker, ["status", "state"]) ?? firstValue(source, ["circuitBreakerStatus", "circuit_breaker_status"]),
-      threshold: firstValue(breaker, ["threshold", "thresholdPct", "threshold_pct"]),
-      deviation: firstValue(breaker, ["deviation", "currentDeviation", "current_deviation"]),
-      releaseTicks: firstValue(breaker, ["releaseTicks", "release_ticks"]),
-    },
-    raw: source,
+    mode: "simulated",
+    health: { ...demo.health, data: normalizeHealth(demo.health.data) },
+    oracle: { ...demo.oracle, data: { ...normalizeOracle(oracleInput), freshness: demo.oracle.data?.freshness } },
+    market: { ...demo.market, data: normalizeMarket(marketInput) },
+    fetchedAt: demo.fetchedAt,
   };
 }
 
-export function normalizeMarket(payload) {
-  const source = unwrapPayload(payload, ["market", "perp", "instrument"]);
+async function loadResource(path, normalizer, fallbackMessage) {
+  try {
+    const payload = ensureJsonObject(await requestJson(path));
+    return { status: "success", data: normalizer(payload), error: null, errorCode: null };
+  } catch (error) {
+    return {
+      status: "error",
+      data: null,
+      error: safeErrorMessage(error, fallbackMessage),
+      errorCode: error?.code || "unknown",
+    };
+  }
+}
+
+export function getHealth() {
+  return loadResource(HEALTH, normalizeHealth, "Backend health unavailable");
+}
+
+export function getOracle() {
+  return loadResource(ORACLE_PRICE, normalizeOracle, "Oracle unavailable");
+}
+
+export function getMarket() {
+  return loadResource(MARKET, normalizeMarket, "Market data unavailable");
+}
+
+export async function loadSnapshot() {
+  if (isDemoMode()) return normalizeDemoSnapshot();
+
+  const [health, oracle, market] = await Promise.all([getHealth(), getOracle(), getMarket()]);
   return {
-    markPrice: firstValue(source, ["markPrice", "mark_price", "mark"]),
-    indexPrice: firstValue(source, ["indexPrice", "index_price", "index"]),
-    fundingRate: firstValue(source, ["fundingRate", "funding_rate", "funding"]),
-    maxLeverage: firstValue(source, ["maxLeverage", "max_leverage", "leverage"]),
-    marketStatus: firstValue(source, ["marketStatus", "market_status", "status"]),
-    hip3Status: firstValue(source, ["hip3Status", "hip_3_status", "hip3"]),
-    pusherStatus: firstValue(source, ["pusherStatus", "pusher_status", "pusher"]),
-    volume24h: firstValue(source, ["volume24h", "volume_24h", "24hVolume", "volume"]),
-    openInterest: firstValue(source, ["openInterest", "open_interest", "oi"]),
-    change24h: firstValue(source, ["change24h", "change_24h", "percentChange", "percent_change"]),
-    history: firstValue(source, ["history", "series", "candles"]),
-    raw: source,
+    mode: "real",
+    health,
+    oracle,
+    market,
+    fetchedAt: new Date().toISOString(),
   };
 }
 
-export function normalizeHealth(payload) {
-  const source = unwrapPayload(payload, ["health", "system"]);
-  return {
-    status: firstValue(source, ["status", "state"]) || (isAvailable(payload) ? "CONNECTED" : undefined),
-    version: firstValue(source, ["version", "build"]),
-    raw: source,
-  };
-}
-
-// Real transport and endpoints are intentionally deferred to a later integration phase.
+export { getConfig, normalizeHealth, normalizeMarket, normalizeOracle, requestJson };

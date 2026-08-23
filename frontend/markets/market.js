@@ -28,7 +28,7 @@ function setMetric(key, value, formatter) {
 }
 
 function resourceStatus(resource, fallbackLabel = "Unavailable") {
-  if (resource?.status === "success") return resource.data?.status || "CONNECTED";
+  if (resource?.status === "success") return resource.data?.marketStatus || "CONNECTED";
   return fallbackLabel;
 }
 
@@ -80,7 +80,7 @@ function renderMarket(snapshot) {
   setMetric("fundingRate", market.fundingRate, formatPercent);
   setMetric("maxLeverage", market.maxLeverage, (value) => `${value}x`);
 
-  const points = market.raw?.history || market.raw?.series || market.raw?.candles || [];
+  const points = market.history || [];
   const chart = page?.querySelector("[data-chart]");
   if (chart) chart.innerHTML = renderPriceChart({ points });
   setText("[data-chart-footnote]", `Historical source: ${demoMode ? "DEMO DATA · simulated series" : points.length > 1 ? "backend series" : "not configured"}. ${demoMode ? "This chart is for visual review only." : "Only real series will be rendered."}`);

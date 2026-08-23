@@ -1,3 +1,5 @@
+import { formatTimestamp as formatTimestampValue, relativeTime as relativeTimeValue } from "./time.js";
+
 export const UNAVAILABLE = "—";
 
 export function isAvailable(value) {
@@ -40,21 +42,11 @@ export function formatBoolean(value) {
 }
 
 export function formatTimestamp(value) {
-  if (!isAvailable(value)) return UNAVAILABLE;
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return String(value);
-  return new Intl.DateTimeFormat("en-US", { hour: "2-digit", minute: "2-digit", second: "2-digit" }).format(date);
+  return isAvailable(value) ? formatTimestampValue(value) : UNAVAILABLE;
 }
 
 export function relativeTime(value) {
-  if (!isAvailable(value)) return UNAVAILABLE;
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return String(value);
-  const seconds = Math.max(0, Math.round((Date.now() - date.getTime()) / 1000));
-  if (seconds < 60) return `${seconds}s ago`;
-  const minutes = Math.round(seconds / 60);
-  if (minutes < 60) return `${minutes}m ago`;
-  return `${Math.round(minutes / 60)}h ago`;
+  return isAvailable(value) ? relativeTimeValue(value) : UNAVAILABLE;
 }
 
 export function normalizeStatus(value, fallback = "UNAVAILABLE") {

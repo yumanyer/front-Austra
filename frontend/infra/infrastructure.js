@@ -27,17 +27,18 @@ function renderSystem(snapshot) {
 
 function renderInfrastructure(snapshot) {
   const demoMode = snapshot.mode === "simulated";
-  const { oracle, market } = snapshot;
+  const { health, oracle, market } = snapshot;
+  const healthData = health.data || {};
   const oracleData = oracle.data || {};
   const marketData = market.data || {};
-  const oracleRaw = oracleData.raw || {};
-  const marketRaw = marketData.raw || {};
+  const healthOracle = healthData.oracle || {};
+  const healthHip3 = healthData.hip3 || {};
   const statuses = {
-    source: oracle.status === "success" && isAvailable(oracleData.source) ? "CONNECTED" : "UNAVAILABLE",
-    engine: oracle.status === "success" && isAvailable(oracleData.status) ? oracleData.status : "UNAVAILABLE",
-    hip: market.status === "success" && isAvailable(marketData.hip3Status) ? marketData.hip3Status : "UNAVAILABLE",
-    core: market.status === "success" && isAvailable(marketRaw.hyperCoreStatus) ? marketRaw.hyperCoreStatus : "UNAVAILABLE",
-    evm: market.status === "success" && isAvailable(marketRaw.hyperEvmStatus || marketRaw.hyperEVMStatus) ? (marketRaw.hyperEvmStatus || marketRaw.hyperEVMStatus) : "UNAVAILABLE",
+    source: oracle.status === "success" && isAvailable(oracleData.source) ? "CONNECTED" : isAvailable(healthOracle.source) ? "CONNECTED" : "UNAVAILABLE",
+    engine: oracle.status === "success" && isAvailable(oracleData.status) ? oracleData.status : isAvailable(healthOracle.status) ? healthOracle.status : "UNAVAILABLE",
+    hip: isAvailable(marketData.hip3?.status) ? marketData.hip3.status : isAvailable(healthHip3.status) ? healthHip3.status : healthHip3.enabled === true ? "ENABLED" : "UNAVAILABLE",
+    core: isAvailable(marketData.hyperCoreStatus) ? marketData.hyperCoreStatus : "UNAVAILABLE",
+    evm: isAvailable(marketData.hyperEvmStatus) ? marketData.hyperEvmStatus : "UNAVAILABLE",
   };
   const hasAnyReal = Object.values(statuses).some((value) => value !== "UNAVAILABLE");
 

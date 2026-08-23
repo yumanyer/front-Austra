@@ -32,12 +32,11 @@ function renderSystem(snapshot) {
 function renderOracle(snapshot) {
   const resource = snapshot.oracle;
   const oracle = resource.data || {};
-  const raw = oracle.raw || {};
   const breaker = oracle.circuitBreaker || {};
   const demoMode = snapshot.mode === "simulated";
   const hasReal = resource.status === "success" && isAvailable(oracle.price);
   const health = resource.status === "success" ? oracle.status : "UNAVAILABLE";
-  const hasCcl = isAvailable(oracle.ccl);
+  const hasCcl = isAvailable(oracle.ccl) || isAvailable(oracle.reportedCcl) || isAvailable(oracle.impliedCcl);
 
   renderSystem(snapshot);
   setHTML("[data-page-mode]", modeBadge(hasReal, demoMode));
@@ -49,14 +48,14 @@ function renderOracle(snapshot) {
   }
 
   renderStatus('[data-source-status="data"]', resource.status === "success" && oracle.source ? "CONNECTED" : "UNAVAILABLE");
-  renderStatus('[data-source-status="assets"]', resource.status === "success" ? "AVAILABLE" : "UNAVAILABLE");
+  renderStatus('[data-source-status="assets"]', resource.status === "success" && (isAvailable(oracle.symbol) || demoMode) ? "AVAILABLE" : "UNAVAILABLE");
   renderStatus('[data-source-status="reference"]', hasCcl ? "PASS" : "UNAVAILABLE");
-  setText("[data-source-name]", oracle.source || "Data912");
+  setText("[data-source-name]", oracle.source || (demoMode ? "Data912" : "Source unavailable"));
 
   const pipeline = [
-    ["data", raw.data912Status || raw.sourceStatus, oracle.source || "Source unavailable"],
-    ["normalize", raw.normalizerStatus || raw.normalizationStatus, raw.normalizationDetail || "Normalization status unavailable"],
-    ["cross-check", oracle.crossCheck, oracle.ccl ? `CCL ${formatPrice(oracle.ccl)}` : "Cross-check unavailable"],
+    ["data", oracle.data912Status, oracle.source || "Source unavailable"],
+    ["normalize", oracle.normalizerStatus, oracle.normalizationDetail || "Normalization status unavailable"],
+    ["cross-check", oracle.crossCheck, (oracle.ccl ?? oracle.reportedCcl) !== undefined ? `CCL ${formatPrice(oracle.ccl ?? oracle.reportedCcl)}` : "Cross-check unavailable"],
     ["breaker", breaker.status, breaker.status ? readableStatus(breaker.status) : "Protection status unavailable"],
     ["ema", isAvailable(oracle.ema) ? "AVAILABLE" : undefined, formatPrice(oracle.ema)],
     ["price", isAvailable(oracle.price) ? "AVAILABLE" : undefined, formatPrice(oracle.price)],
@@ -72,7 +71,8 @@ function renderOracle(snapshot) {
     bid: valueOrDash(oracle.bid, formatPrice),
     ask: valueOrDash(oracle.ask, formatPrice),
     spread: valueOrDash(oracle.spread, formatPrice),
-    ccl: valueOrDash(oracle.ccl, formatPrice),
+    // The UI's CCL row displays the reported reference when plain `ccl` is absent; the model keeps both fields distinct.
+    ccl: valueOrDash(oracle.ccl ?? oracle.reportedCcl, formatPrice),
     impliedCcl: valueOrDash(oracle.impliedCcl, formatPrice),
     marketOpen: formatBoolean(oracle.marketOpen),
     source: valueOrDash(oracle.source),
