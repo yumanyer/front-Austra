@@ -3,6 +3,7 @@ import { getHealth, getMarket, getOracle, loadSnapshot } from "../js/api/index.j
 import { ApiError, requestJson } from "../js/api/client.js";
 import { normalizeHealth, normalizeMarket, normalizeOracle } from "../js/api/normalize.js";
 import { normalizeTimestamp, relativeTime } from "../js/utils/time.js";
+import { formatRatioPercent, valueOrDash } from "../js/utils/format.js";
 
 const oracle = normalizeOracle({
   symbol: "YPF",
@@ -27,13 +28,15 @@ const oracle = normalizeOracle({
   adrRatio: 10,
   timestamp: 1_756_000_000,
   lastPrintAt: 1_756_000_000,
-  breaker: { frozen: false, thresholdPct: 10, releaseTicks: "3 / 3" },
+  breaker: { frozen: false, thresholdPct: 0.1, consecutiveOk: 3, releaseTicks: 3 },
 });
 assert.equal(oracle.symbol, "YPF");
 assert.equal(oracle.price, 42.315);
 assert.equal(oracle.ema, 42.301);
 assert.equal(oracle.circuitBreaker.frozen, false);
-assert.equal(oracle.circuitBreaker.thresholdPct, 10);
+assert.equal(oracle.circuitBreaker.thresholdPct, 0.1);
+assert.equal(formatRatioPercent(oracle.circuitBreaker.thresholdPct), "+10.00%");
+assert.equal(valueOrDash(0, formatRatioPercent), "0.00%");
 assert.equal(oracle.reportedCcl, 1180);
 assert.equal(oracle.ccl, undefined);
 assert.equal(oracle.impliedCcl, 1181.2);
@@ -86,9 +89,12 @@ assert.equal(market.oracleSource, "data912");
 assert.equal(market.simulated, false);
 assert.equal(market.lastPushTx, undefined);
 assert.equal(market.lastPushAt, undefined);
-assert.equal(market.history.length, 1);
-assert.equal(typeof market.history[0].timestamp, "number");
+assert.equal(market.history, undefined);
 assert.equal(market.volume24h, undefined);
+assert.equal(market.openInterest, undefined);
+
+const zeroFundingMarket = normalizeMarket({ symbol: "YPF-PERP", markPrice: 42.32, fundingRate: 0 });
+assert.equal(zeroFundingMarket.fundingRate, 0);
 
 const marketWithoutHistory = normalizeMarket({ symbol: "YPF-PERP", markPrice: 42.32 });
 assert.equal(marketWithoutHistory.history, undefined);
@@ -137,8 +143,13 @@ try {
   const demoSnapshot = await loadSnapshot();
   assert.equal(demoSnapshot.mode, "simulated");
   assert.equal(fetchCalls, 0);
-  assert.equal(demoSnapshot.market.data.history.length > 1, true);
-  assert.equal(demoSnapshot.oracle.data.crossCheck, "PASS");
+assert.equal(demoSnapshot.market.data.history, undefined);
+assert.equal(demoSnapshot.market.data.volume24h, undefined);
+assert.equal(demoSnapshot.market.data.openInterest, undefined);
+  assert.equal(demoSnapshot.oracle.data.crossCheck, "ok");
+  assert.equal(demoSnapshot.oracle.data.circuitBreaker.status, "CLEAR");
+  assert.equal(demoSnapshot.oracle.data.circuitBreaker.thresholdPct, 0.1);
+  assert.equal(demoSnapshot.oracle.data.circuitBreaker.releaseTicks, 3);
 
   globalThis.AUSTRAL_CONFIG = { API_URL: "http://backend.test", USE_DEMO_DATA: false, REQUEST_TIMEOUT_MS: 10 };
   globalThis.fetch = async () => {

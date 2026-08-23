@@ -1,7 +1,7 @@
 import { renderPriceChart } from "../js/components/chart.js";
 import { emptyNotice, icon } from "../js/components/common.js";
 import { loadPageSnapshot } from "../js/state.js";
-import { formatPercent, formatPrice, isAvailable, modeBadge, readableStatus, statusBadge, valueOrDash } from "../js/utils/format.js";
+import { formatPercent, formatPrice, formatRatioPercent, isAvailable, modeBadge, readableStatus, statusBadge, valueOrDash } from "../js/utils/format.js";
 import { showToast, wireGlobalUI } from "../js/app.js";
 
 const page = document.querySelector('[data-page="market"]');
@@ -57,9 +57,13 @@ function renderMarket(snapshot) {
   const oracleResource = snapshot.oracle;
   const market = marketResource.data || {};
   const oracle = oracleResource.data || {};
+  const breaker = {
+    ...(snapshot.health?.data?.breaker || {}),
+    ...Object.fromEntries(Object.entries(oracle.circuitBreaker || {}).filter(([, value]) => isAvailable(value))),
+  };
   const hasPrice = oracleResource.status === "success" && isAvailable(oracle.price);
   const marketStatus = resourceStatus(marketResource, "UNAVAILABLE");
-  const change = valueOrDash(market.change24h, formatPercent);
+  const change = valueOrDash(oracle.pctChange, formatPercent);
   const changeElement = setText("[data-change-value]", change);
   changeElement?.classList.toggle("change-readout__value--down", change.startsWith("-"));
 
@@ -77,13 +81,13 @@ function renderMarket(snapshot) {
   setMetric("markPrice", market.markPrice, formatPrice);
   setMetric("volume24h", market.volume24h, formatPrice);
   setMetric("openInterest", market.openInterest, formatPrice);
-  setMetric("fundingRate", market.fundingRate, formatPercent);
+  setMetric("fundingRate", market.fundingRate, formatRatioPercent);
   setMetric("maxLeverage", market.maxLeverage, (value) => `${value}x`);
 
-  const points = market.history || [];
+  const points = Array.isArray(market.history) ? market.history : [];
   const chart = page?.querySelector("[data-chart]");
   if (chart) chart.innerHTML = renderPriceChart({ points });
-  setText("[data-chart-footnote]", `Historical source: ${demoMode ? "DEMO DATA · simulated series" : points.length > 1 ? "backend series" : "not configured"}. ${demoMode ? "This chart is for visual review only." : "Only real series will be rendered."}`);
+  setText("[data-chart-footnote]", points.length > 1 ? "Historical source: backend series." : "Historical data unavailable. The Market endpoint does not provide price or EMA history.");
 
   const summaryReal = oracleResource.status === "success" && isAvailable(oracle.price);
   setHTML("[data-oracle-summary-status]", statusBadge(oracleResource.status === "success" ? oracle.status : "UNAVAILABLE", { label: oracleResource.status === "success" ? readableStatus(oracle.status) : "Unavailable", pulse: summaryReal }));
@@ -91,7 +95,7 @@ function renderMarket(snapshot) {
   setText("[data-oracle-freshness]", oracle.freshness ? `Freshness ${oracle.freshness}` : "Freshness —");
   setText('[data-oracle-summary="source"]', valueOrDash(oracle.source));
   setText('[data-oracle-summary="ema"]', formatPrice(oracle.ema));
-  setText('[data-oracle-summary="breaker"]', valueOrDash(oracle.circuitBreaker?.status));
+  setText('[data-oracle-summary="breaker"]', valueOrDash(breaker.status));
   const summaryNotice = page?.querySelector("[data-oracle-summary-notice]");
   if (summaryNotice) {
     summaryNotice.innerHTML = oracleResource.status === "error" ? emptyNotice("Oracle unavailable. The endpoint did not return a readable payload.", "error") : "";
@@ -101,10 +105,10 @@ function renderMarket(snapshot) {
 
 function bindMarketInteractions() {
   page?.querySelectorAll("[data-period]").forEach((button) => {
-    button.addEventListener("click", () => {
-      page.querySelectorAll("[data-period]").forEach((item) => item.classList.remove("is-active"));
-      button.classList.add("is-active");
-    });
+    button.disabled = true;
+    button.setAttribute("aria-disabled", "true");
+    button.setAttribute("title", "Historical data unavailable");
+    button.classList.remove("is-active");
   });
 }
 

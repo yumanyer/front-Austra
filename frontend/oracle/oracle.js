@@ -1,6 +1,6 @@
 import { emptyNotice, icon } from "../js/components/common.js";
 import { loadPageSnapshot } from "../js/state.js";
-import { formatBoolean, formatPercent, formatPrice, isAvailable, modeBadge, normalizeStatus, readableStatus, statusBadge, valueOrDash } from "../js/utils/format.js";
+import { formatBoolean, formatPrice, formatRatioPercent, isAvailable, modeBadge, normalizeStatus, readableStatus, statusBadge, valueOrDash } from "../js/utils/format.js";
 import { wireGlobalUI } from "../js/app.js";
 
 const page = document.querySelector('[data-page="oracle"]');
@@ -32,7 +32,10 @@ function renderSystem(snapshot) {
 function renderOracle(snapshot) {
   const resource = snapshot.oracle;
   const oracle = resource.data || {};
-  const breaker = oracle.circuitBreaker || {};
+  const breaker = {
+    ...(snapshot.health?.data?.breaker || {}),
+    ...Object.fromEntries(Object.entries(oracle.circuitBreaker || {}).filter(([, value]) => isAvailable(value))),
+  };
   const demoMode = snapshot.mode === "simulated";
   const hasReal = resource.status === "success" && isAvailable(oracle.price);
   const health = resource.status === "success" ? oracle.status : "UNAVAILABLE";
@@ -94,16 +97,19 @@ function renderOracle(snapshot) {
   }
   setText("[data-breaker-status]", readableStatus(breakerStatus));
   setText("[data-breaker-description]", frozen ? "Price protected by circuit breaker." : breakerStatus === "UNAVAILABLE" ? "Protection state unavailable." : "Circuit breaker state received from backend.");
-  const threshold = valueOrDash(breaker.threshold, formatPercent);
-  const deviation = valueOrDash(breaker.deviation, formatPercent);
-  const releaseTicks = valueOrDash(breaker.releaseTicks);
+  const thresholdRatio = breaker.thresholdPct ?? breaker.threshold;
+  const threshold = valueOrDash(thresholdRatio, formatRatioPercent);
+  const deviation = valueOrDash(breaker.deviation, formatRatioPercent);
+  const releaseTicks = isAvailable(breaker.releaseTicks)
+    ? `${isAvailable(breaker.consecutiveOk) ? breaker.consecutiveOk : "—"} / ${breaker.releaseTicks}`
+    : "—";
   setText('[data-breaker-value="threshold"]', threshold);
   setText('[data-breaker-value="deviation"]', deviation);
   setText('[data-breaker-value="releaseTicks"]', releaseTicks);
   const widths = {
-    threshold: isAvailable(breaker.threshold) ? Math.min(Math.max(Number(breaker.threshold), 0), 100) : 0,
-    deviation: isAvailable(breaker.deviation) ? Math.min(Math.max(Number(breaker.deviation) * 5, 0), 100) : 0,
-    releaseTicks: isAvailable(breaker.releaseTicks) ? 100 : 0,
+    threshold: isAvailable(thresholdRatio) ? Math.min(Math.max(Number(thresholdRatio) * 100, 0), 100) : 0,
+    deviation: isAvailable(breaker.deviation) ? Math.min(Math.max(Number(breaker.deviation) * 500, 0), 100) : 0,
+    releaseTicks: isAvailable(breaker.releaseTicks) && isAvailable(breaker.consecutiveOk) ? Math.min(Math.max((Number(breaker.consecutiveOk) / Number(breaker.releaseTicks)) * 100, 0), 100) : 0,
   };
   Object.entries(widths).forEach(([key, width]) => {
     const fill = page?.querySelector(`[data-breaker-fill="${key}"]`);

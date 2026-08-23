@@ -299,9 +299,9 @@ MarketModel
 └── lastPushAt
 ```
 
-Los siguientes campos del fixture actual no deben completarse desde demo cuando `USE_DEMO_DATA=false`: `volume24h`, `openInterest`, `change24h`, `history`, `hyperCoreStatus` y `hyperEvmStatus`. Si el endpoint no los proporciona con una correspondencia clara, deben quedar no disponibles. En particular, la ausencia de histórico debe llevar al estado de chart `Historical data unavailable`; no se debe generar una serie falsa.
+Los campos que el backend no proporciona —`volume24h`, `openInterest`, `history`, `hyperCoreStatus` y `hyperEvmStatus`— ya no forman parte del modelo normalizado ni del fixture demo. `change24h` tampoco se lee desde Market: cuando se muestra el cambio del hero, proviene únicamente de `oracle.pctChange`. La ausencia de histórico lleva al estado de chart `Historical data unavailable`; no se genera una serie falsa.
 
-La futura normalización debe tratar `hip3.*` como un submodelo cuando el backend lo entregue. No debe inferir `HyperCore` o `HyperEVM` a partir de `hip3` sin evidencia de que esos componentes representan el mismo estado.
+La normalización actual trata `hip3.*` como un submodelo cuando el backend lo entrega. No infiere `HyperCore` o `HyperEVM` a partir de `hip3` porque esos estados no están presentes en el contrato Market.
 
 ## 11. Snapshot y estado compartido
 
@@ -360,7 +360,7 @@ UI
 
 No debe existir una mezcla silenciosa entre backend real y valores del fixture. En modo real, cada campo ausente debe permanecer ausente o adoptar el fallback visual ya existente. El chart no debe reutilizar `history` demo si el endpoint real no la entrega.
 
-En el estado actual, `USE_DEMO_DATA=true` continúa funcionando con el fixture. El camino `USE_DEMO_DATA=false` todavía no consulta API y retorna un estado no disponible deliberado. Esa decisión es coherente con la restricción de no integrar endpoints durante esta entrega, pero debe cambiarse sólo en una futura implementación de código de la Fase 2.
+En el estado actual, `USE_DEMO_DATA=true` continúa funcionando con un fixture limitado al contrato disponible y sin datos ficticios de volumen, Open Interest o histórico. El camino `USE_DEMO_DATA=false` consulta únicamente la Data Layer y conserva como unavailable cada campo que el backend no entrega, sin fallback silencioso al fixture.
 
 ## 13. Manejo de errores
 
@@ -441,7 +441,7 @@ La siguiente lista registra el estado de la implementación actual. El contrato 
 ## 17. Validación contra el backend real
 La implementación se ejecutó sobre la copia local completa y el backend fue utilizado como fuente de verdad. Se confirmaron las rutas parametrizadas `GET /health`, `GET /oracle/price/:symbol` y `GET /market/:symbol`, sus parámetros `YPF` y `YPF-PERP`, timestamps Unix en segundos, los modelos Oracle/Market y los subobjetos Health. En runtime, `/health` respondió `200`; `/oracle/price/YPF` y `/market/YPF-PERP` respondieron `503 Oracle not ready yet` porque las llamadas externas a Data912 fallaron en este entorno. El frontend clasifica esos `503` como `http`, conserva el snapshot parcial y no usa demo como fallback.
 
-Durante esa implementación se deberá revisar el diff para confirmar que no cambien HTML visual, CSS, responsive, iconos o textos que no sean estrictamente necesarios para mostrar datos reales. Blockchain, wallet, contratos, ABI, RPC, Web3, HyperEVM, HyperCore, VPS, Nginx, dominio, HTTPS y deployment permanecen fuera de esta fase.
+La revisión final del diff confirmó que los cambios visuales se limitan a representar datos no disponibles: em dash, estado de chart unavailable y controles de período deshabilitados. No se alteraron branding, layout, tipografías, colores ni navegación. Blockchain, wallet, contratos, ABI, RPC, Web3, HyperEVM, HyperCore, VPS, Nginx, dominio, HTTPS y deployment permanecen fuera de esta fase.
 
 ## 18. Registro de esta entrega
 

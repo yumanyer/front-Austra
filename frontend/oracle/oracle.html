@@ -80,30 +80,30 @@
               <section class="surface" aria-labelledby="oracle-metrics-title">
                 <div class="surface__header"><div><h2 class="surface-title" id="oracle-metrics-title">Oracle metrics</h2><p class="surface-subtitle">Reference values available from the pricing service</p></div></div>
                 <div class="metrics-list">
-                  <div class="metrics-list__row"><span class="metrics-list__label">Last Print</span><span class="metrics-list__value metrics-list__value--strong" data-oracle-metric="lastPrint">$42.32</span></div>
-                  <div class="metrics-list__row"><span class="metrics-list__label">EMA</span><span class="metrics-list__value metrics-list__value--strong" data-oracle-metric="ema">$42.301</span></div>
-                  <div class="metrics-list__row"><span class="metrics-list__label">Bid</span><span class="metrics-list__value metrics-list__value--strong" data-oracle-metric="bid">$42.30</span></div>
-                  <div class="metrics-list__row"><span class="metrics-list__label">Ask</span><span class="metrics-list__value metrics-list__value--strong" data-oracle-metric="ask">$42.34</span></div>
-                  <div class="metrics-list__row"><span class="metrics-list__label">Spread</span><span class="metrics-list__value metrics-list__value--strong" data-oracle-metric="spread">$0.04</span></div>
-                  <div class="metrics-list__row"><span class="metrics-list__label">CCL</span><span class="metrics-list__value metrics-list__value--strong" data-oracle-metric="ccl">$1,180.00</span></div>
-                  <div class="metrics-list__row"><span class="metrics-list__label">Implied CCL</span><span class="metrics-list__value metrics-list__value--strong" data-oracle-metric="impliedCcl">$1,181.20</span></div>
-                  <div class="metrics-list__row"><span class="metrics-list__label">Market Open</span><span class="metrics-list__value metrics-list__value--strong" data-oracle-metric="marketOpen">Yes</span></div>
-                  <div class="metrics-list__row"><span class="metrics-list__label">Source</span><span class="metrics-list__value metrics-list__value--strong" data-oracle-metric="source">Data912</span></div>
-                  <div class="metrics-list__row"><span class="metrics-list__label">Freshness</span><span class="metrics-list__value metrics-list__value--strong" data-oracle-metric="freshness">3s ago</span></div>
-                  <div class="metrics-list__row"><span class="metrics-list__label">Status</span><span class="metrics-list__value metrics-list__value--strong" data-oracle-metric="status">VALID</span></div>
+                  <div class="metrics-list__row"><span class="metrics-list__label">Last Print</span><span class="metrics-list__value metrics-list__value--strong" data-oracle-metric="lastPrint">—</span></div>
+                  <div class="metrics-list__row"><span class="metrics-list__label">EMA</span><span class="metrics-list__value metrics-list__value--strong" data-oracle-metric="ema">—</span></div>
+                  <div class="metrics-list__row"><span class="metrics-list__label">Bid</span><span class="metrics-list__value metrics-list__value--strong" data-oracle-metric="bid">—</span></div>
+                  <div class="metrics-list__row"><span class="metrics-list__label">Ask</span><span class="metrics-list__value metrics-list__value--strong" data-oracle-metric="ask">—</span></div>
+                  <div class="metrics-list__row"><span class="metrics-list__label">Spread</span><span class="metrics-list__value metrics-list__value--strong" data-oracle-metric="spread">—</span></div>
+                  <div class="metrics-list__row"><span class="metrics-list__label">CCL</span><span class="metrics-list__value metrics-list__value--strong" data-oracle-metric="ccl">—</span></div>
+                  <div class="metrics-list__row"><span class="metrics-list__label">Implied CCL</span><span class="metrics-list__value metrics-list__value--strong" data-oracle-metric="impliedCcl">—</span></div>
+                  <div class="metrics-list__row"><span class="metrics-list__label">Market Open</span><span class="metrics-list__value metrics-list__value--strong" data-oracle-metric="marketOpen">—</span></div>
+                  <div class="metrics-list__row"><span class="metrics-list__label">Source</span><span class="metrics-list__value metrics-list__value--strong" data-oracle-metric="source">—</span></div>
+                  <div class="metrics-list__row"><span class="metrics-list__label">Freshness</span><span class="metrics-list__value metrics-list__value--strong" data-oracle-metric="freshness">—</span></div>
+                  <div class="metrics-list__row"><span class="metrics-list__label">Status</span><span class="metrics-list__value metrics-list__value--strong" data-oracle-metric="status">—</span></div>
                 </div>
               </section>
-              <section class="ema-card" aria-labelledby="ema-title"><div class="ema-card__icon"><span class="icon-slot" data-icon="chart"></span></div><div><h2 id="ema-title">EMA</h2><p>Exponential Moving Average. Used as a stability reference for the circuit breaker and as fallback outside market hours.</p></div><span class="ema-card__value" data-ema-value>$42.301</span></section>
+              <section class="ema-card" aria-labelledby="ema-title"><div class="ema-card__icon"><span class="icon-slot" data-icon="chart"></span></div><div><h2 id="ema-title">EMA</h2><p>Exponential Moving Average. Used as a stability reference for the circuit breaker and as fallback outside market hours.</p></div><span class="ema-card__value" data-ema-value>—</span></section>
             </div>
             <div class="oracle-stack">
               <section class="surface" aria-labelledby="breaker-title">
                 <div class="surface__header"><div><h2 class="surface-title" id="breaker-title">Circuit breaker</h2><p class="surface-subtitle">A protection mechanism, not an error state</p></div></div>
                 <div class="surface__body circuit-panel__body">
-                  <div class="circuit-state"><div class="circuit-state__icon" data-breaker-icon><span class="icon-slot" data-icon="check"></span></div><div><h2 class="circuit-state__title" data-breaker-status>CLEAR</h2><p class="circuit-state__description" data-breaker-description>Circuit breaker state received from backend.</p></div></div>
+                  <div class="circuit-state"><div class="circuit-state__icon" data-breaker-icon><span class="icon-slot" data-icon="warning"></span></div><div><h2 class="circuit-state__title" data-breaker-status>—</h2><p class="circuit-state__description" data-breaker-description>Protection state unavailable.</p></div></div>
                   <div class="circuit-bars">
-                    <div class="circuit-bar"><div class="circuit-bar__head"><span>Threshold</span><strong data-breaker-value="threshold">10.00%</strong></div><div class="circuit-bar__track"><div class="circuit-bar__fill" data-breaker-fill="threshold" style="width:10%"></div></div></div>
-                    <div class="circuit-bar"><div class="circuit-bar__head"><span>Current deviation</span><strong data-breaker-value="deviation">1.80%</strong></div><div class="circuit-bar__track"><div class="circuit-bar__fill circuit-bar__fill--green" data-breaker-fill="deviation" style="width:9%"></div></div></div>
-                    <div class="circuit-bar"><div class="circuit-bar__head"><span>Release ticks</span><strong data-breaker-value="releaseTicks">3 / 3</strong></div><div class="circuit-bar__track"><div class="circuit-bar__fill circuit-bar__fill--green" data-breaker-fill="releaseTicks" style="width:100%"></div></div></div>
+                    <div class="circuit-bar"><div class="circuit-bar__head"><span>Threshold</span><strong data-breaker-value="threshold">—</strong></div><div class="circuit-bar__track"><div class="circuit-bar__fill" data-breaker-fill="threshold" style="width:0%"></div></div></div>
+                    <div class="circuit-bar"><div class="circuit-bar__head"><span>Current deviation</span><strong data-breaker-value="deviation">—</strong></div><div class="circuit-bar__track"><div class="circuit-bar__fill circuit-bar__fill--green" data-breaker-fill="deviation" style="width:0%"></div></div></div>
+                    <div class="circuit-bar"><div class="circuit-bar__head"><span>Release ticks</span><strong data-breaker-value="releaseTicks">—</strong></div><div class="circuit-bar__track"><div class="circuit-bar__fill circuit-bar__fill--green" data-breaker-fill="releaseTicks" style="width:0%"></div></div></div>
                   </div>
                 </div>
               </section>

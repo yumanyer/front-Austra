@@ -31,6 +31,11 @@ export function formatPercent(value) {
   return `${sign}${number.toFixed(2)}%`;
 }
 
+export function formatRatioPercent(value) {
+  if (!isAvailable(value) || Number.isNaN(Number(value))) return UNAVAILABLE;
+  return formatPercent(Number(value) * 100);
+}
+
 export function formatNumber(value, options = {}) {
   if (!isAvailable(value) || Number.isNaN(Number(value))) return UNAVAILABLE;
   return new Intl.NumberFormat("en-US", options).format(Number(value));

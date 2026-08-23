@@ -36,7 +36,7 @@ function normalizeBreaker(source) {
   const breaker = objectOrEmpty(firstValue(source, ["breaker", "circuitBreaker", "circuit_breaker"]));
   const frozen = firstValue(breaker, ["frozen"]) ?? (source?.status === "frozen" ? true : undefined);
   const explicitStatus = firstValue(breaker, ["status", "state"]) ?? firstValue(source, ["circuitBreakerStatus", "circuit_breaker_status"]);
-  const status = isAvailable(explicitStatus) ? explicitStatus : frozen === true ? "FROZEN" : undefined;
+  const status = isAvailable(explicitStatus) ? explicitStatus : frozen === true ? "FROZEN" : frozen === false ? "CLEAR" : undefined;
   const threshold = firstValue(breaker, ["threshold", "thresholdPct", "threshold_pct"]) ?? firstValue(source, ["threshold", "thresholdPct", "threshold_pct"]);
   const thresholdPct = firstValue(breaker, ["thresholdPct", "threshold_pct"]) ?? firstValue(source, ["thresholdPct", "threshold_pct"]);
   const deviation = firstValue(breaker, ["deviation", "currentDeviation", "current_deviation"]) ?? firstValue(source, ["deviation", "currentDeviation", "current_deviation"]);
@@ -52,19 +52,6 @@ function normalizeBreaker(source) {
     deviation,
     releaseTicks: firstValue(breaker, ["releaseTicks", "release_ticks"]) ?? firstValue(source, ["releaseTicks", "release_ticks"]),
   };
-}
-
-function normalizeHistory(value) {
-  if (!Array.isArray(value)) return undefined;
-  return value.map((point) => {
-    if (typeof point === "number") return { price: point, ema: undefined, timestamp: undefined };
-    const source = objectOrEmpty(point);
-    return {
-      price: firstValue(source, ["price", "value", "indexPrice"]),
-      ema: firstValue(source, ["ema", "EMA"]),
-      timestamp: normalizeTimestamp(firstValue(source, ["timestamp", "time", "at"])),
-    };
-  }).filter((point) => isAvailable(point.price));
 }
 
 function normalizeHip3(source) {
@@ -132,7 +119,6 @@ export function normalizeOracle(payload) {
 export function normalizeMarket(payload) {
   const source = unwrapPayload(payload, ["market", "perp", "instrument"]);
   const hip3 = normalizeHip3(source);
-  const history = normalizeHistory(firstValue(source, ["history", "series", "candles"]));
   return {
     symbol: firstValue(source, ["symbol", "ticker", "asset"]),
     markPrice: firstValue(source, ["markPrice", "mark_price", "mark"]),
@@ -146,12 +132,6 @@ export function normalizeMarket(payload) {
     simulated: firstValue(source, ["simulated"]),
     lastPushTx: firstValue(source, ["lastPushTx", "last_push_tx"]),
     lastPushAt: normalizeTimestamp(firstValue(source, ["lastPushAt", "last_push_at"])),
-    volume24h: firstValue(source, ["volume24h", "volume_24h", "24hVolume", "volume"]),
-    openInterest: firstValue(source, ["openInterest", "open_interest", "oi"]),
-    change24h: firstValue(source, ["change24h", "change_24h", "percentChange", "percent_change", "pctChange"]),
-    history,
-    hyperCoreStatus: firstValue(source, ["hyperCoreStatus", "hyper_core_status"]),
-    hyperEvmStatus: firstValue(source, ["hyperEvmStatus", "hyper_evm_status", "hyperEVMStatus"]),
   };
 }
 
@@ -174,7 +154,7 @@ function normalizeHealthBreaker(source) {
   const frozen = firstValue(breaker, ["frozen"]);
   const explicitStatus = firstValue(breaker, ["status", "state"]);
   return {
-    status: isAvailable(explicitStatus) ? explicitStatus : frozen === true ? "FROZEN" : undefined,
+    status: isAvailable(explicitStatus) ? explicitStatus : frozen === true ? "FROZEN" : frozen === false ? "CLEAR" : undefined,
     frozen,
     frozenPrice: firstValue(breaker, ["frozenPrice", "frozen_price"]),
     frozenAt: normalizeTimestamp(firstValue(breaker, ["frozenAt", "frozen_at"])),
