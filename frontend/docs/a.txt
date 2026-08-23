@@ -1,0 +1,1070 @@
+
+AUSTRALFINANCE — IMPLEMENTACIÓN FASE 2 DATA LAYER DEL FRONTEND
+
+OBJETIVO
+
+Implementar la Fase 2 del frontend de AustralFinance.
+
+El objetivo es conectar el frontend actual con el backend real mediante una Data Layer limpia, desacoplada y mantenible.
+
+IMPORTANTE:
+
+El frontend que estás viendo actualmente es la versión LOCAL del frontend.
+
+El repositorio contiene además el backend y blockchain en carpetas separadas dentro del mismo proyecto.
+
+No asumas que el contrato del backend que aparece en documentación anterior coincide exactamente con el backend actual.
+
+ANTES DE IMPLEMENTAR LA FASE 2 DEBES REVISAR EL BACKEND LOCAL.
+
+La estructura general del proyecto es similar a:
+
+AustralFinance/
+├── frontend/
+├── backend/
+└── blockchain/
+
+El backend local debe ser utilizado como fuente de verdad para verificar:
+
+- endpoints reales
+- métodos HTTP
+- payloads reales
+- nombres de campos
+- estructura de objetos
+- timestamps
+- unidades
+- estados
+- Oracle
+- Circuit Breaker
+- HIP-3
+- Pusher
+- Market
+- Health
+
+No inventes contratos basándote únicamente en este documento.
+
+--------------------------------------------------
+1. REGLA PRINCIPAL
+--------------------------------------------------
+
+No rehagas el frontend.
+
+No rediseñes nada.
+
+El HTML, CSS, layout, responsive, tipografías, colores, espaciados, iconos y estructura visual existentes deben mantenerse.
+
+La implementación debe concentrarse exclusivamente en:
+
+- API/Data Layer
+- configuración
+- endpoints
+- HTTP client
+- normalización
+- estado compartido
+- integración de las páginas existentes con el estado
+- manejo de errores
+- timestamps
+- freshness
+- Circuit Breaker
+- CCL
+- tests
+
+NO implementar todavía:
+
+- blockchain
+- wallet
+- contratos
+- ABI
+- RPC
+- Web3
+- HyperCore
+- HyperEVM
+- AssetOracle
+- firmas
+- transacciones
+- VPS
+- Nginx
+- dominio
+- HTTPS
+- deployment
+
+--------------------------------------------------
+2. PRIMER PASO OBLIGATORIO: REVISAR EL BACKEND
+--------------------------------------------------
+
+Antes de modificar el frontend:
+
+1. Ubica la carpeta backend dentro del proyecto.
+2. Inspecciona su estructura.
+3. Identifica cómo se levantan los endpoints.
+4. Busca las rutas reales.
+5. Revisa los schemas, tipos, controllers, services o handlers correspondientes.
+6. Determina los payloads reales de:
+
+GET /health
+GET /oracle/price/YPF
+GET /market/YPF-PERP
+
+7. Verifica si las rutas anteriores realmente existen con esos nombres.
+8. Si las rutas tienen diferencias respecto de esta especificación, utiliza el contrato REAL del backend.
+9. Verifica los nombres y tipos reales de los campos.
+10. Verifica las unidades.
+11. Verifica timestamps.
+12. Verifica el Circuit Breaker.
+13. Verifica CCL.
+14. Verifica HIP-3.
+15. Verifica Pusher.
+16. Verifica qué información realmente está disponible.
+
+IMPORTANTE:
+
+No modificar el backend para hacer que coincida con el frontend.
+
+El backend es la fuente de verdad.
+
+Si el frontend espera un campo que el backend no entrega, adaptar el frontend mediante normalización y dejar el campo como unavailable cuando corresponda.
+
+No crear campos falsos en el backend.
+
+No modificar contratos del backend como solución rápida.
+
+--------------------------------------------------
+3. INSPECCIÓN DEL FRONTEND ACTUAL
+--------------------------------------------------
+
+Después de revisar el backend, inspecciona el frontend LOCAL actual.
+
+Revisar especialmente:
+
+frontend/
+├── index.html
+├── markets/
+│   ├── market.html
+│   ├── market.js
+│   └── markets.css
+├── oracle/
+│   ├── oracle.html
+│   ├── oracle.js
+│   └── oracle.css
+├── infra/
+│   ├── infrastructure.html
+│   ├── infrastructure.js
+│   └── infra.css
+├── css/
+│   ├── root.css
+│   └── media.css
+├── js/
+│   ├── api/
+│   ├── components/
+│   ├── utils/
+│   ├── state.js
+│   ├── demo-data.js
+│   └── runtime-config.js
+├── tests/
+├── package.json
+└── server.cjs
+
+También revisar:
+
+- README
+- documentación existente de Fase 2
+- smoke tests
+- configuración existente
+
+Antes de modificar:
+
+git status
+git branch --show-current
+git log --oneline -5
+
+No sobrescribir cambios locales existentes.
+
+--------------------------------------------------
+4. ARQUITECTURA OBJETIVO
+--------------------------------------------------
+
+La arquitectura final debe ser:
+
+HTML
+  ↓
+Page JS
+  ↓
+Shared State
+  ↓
+API/Data Layer
+  ├── config.js
+  ├── endpoints.js
+  ├── client.js
+  ├── normalize.js
+  └── index.js
+  ↓
+Backend
+
+Las páginas NO deben:
+
+- hacer fetch directamente
+- conocer URLs del backend
+- interpretar JSON crudo
+- duplicar requests
+- implementar lógica de normalización
+
+Las páginas deben recibir modelos normalizados mediante el estado compartido.
+
+--------------------------------------------------
+5. CONFIGURACIÓN
+--------------------------------------------------
+
+Implementar o completar:
+
+js/runtime-config.js
+js/api/config.js
+
+La configuración debe estar centralizada.
+
+Ejemplo conceptual:
+
+window.AUSTRAL_CONFIG = {
+  API_URL: "http://localhost:3000",
+  USE_DEMO_DATA: true,
+  REQUEST_TIMEOUT_MS: 5000
+};
+
+No copiar esta configuración literalmente si el proyecto actual ya tiene una estructura equivalente.
+
+Adaptarla al código existente.
+
+La URL del backend NO debe aparecer hardcodeada dentro de:
+
+market.js
+oracle.js
+infrastructure.js
+normalize.js
+
+La configuración debe permitir cambiar posteriormente:
+
+http://localhost:3000
+
+por:
+
+http://IP-DE-VPS:3000
+
+o:
+
+https://api.dominio.com
+
+sin modificar las páginas.
+
+--------------------------------------------------
+6. ENDPOINTS
+--------------------------------------------------
+
+Crear o completar:
+
+js/api/endpoints.js
+
+Debe existir un catálogo centralizado.
+
+Ejemplo:
+
+HEALTH
+ORACLE_PRICE
+MARKET
+
+PERO:
+
+Los nombres y rutas deben confirmarse primero contra el backend LOCAL.
+
+Si el backend actual utiliza una ruta diferente, utilizar la ruta real.
+
+No asumir que:
+
+GET /health
+GET /oracle/price/YPF
+GET /market/YPF-PERP
+
+son correctas sólo porque aparecen en documentación anterior.
+
+La documentación anterior es referencia.
+
+El backend local es la fuente de verdad.
+
+--------------------------------------------------
+7. HTTP CLIENT
+--------------------------------------------------
+
+Implementar:
+
+js/api/client.js
+
+Responsabilidades:
+
+- construir URL
+- utilizar API_URL
+- fetch
+- headers
+- timeout
+- AbortController
+- validar HTTP status
+- parsear JSON
+- clasificar errores
+- devolver payload al nivel superior
+
+El client NO debe conocer:
+
+- Oracle
+- Market
+- Health
+- Circuit Breaker
+- CCL
+- DOM
+
+Errores mínimos:
+
+configuration
+network
+timeout
+aborted
+http
+invalid_json
+invalid_payload
+
+No exponer stack traces al usuario.
+
+--------------------------------------------------
+8. NORMALIZACIÓN
+--------------------------------------------------
+
+Implementar o completar:
+
+js/api/normalize.js
+
+Funciones conceptuales:
+
+normalizeHealth()
+normalizeOracle()
+normalizeMarket()
+
+Estas funciones deben transformar:
+
+BACKEND JSON
+    ↓
+FRONTEND MODEL
+
+No deben:
+
+- hacer fetch
+- acceder al DOM
+- utilizar demo-data
+- inventar campos
+
+Cada campo debe existir únicamente cuando tenga correspondencia real con el backend.
+
+--------------------------------------------------
+9. ORACLE
+--------------------------------------------------
+
+El modelo debe soportar los campos que realmente existan en el backend actual.
+
+Como referencia:
+
+symbol
+price
+ema
+lastPrint
+bid
+ask
+spread
+spreadPct
+pctChange
+localPriceArs
+adrRatio
+ccl
+cclSource
+reportedCcl
+impliedCcl
+cclSampled
+cclDeviation
+crossCheck
+deviation
+breakerReason
+frozenAt
+timestamp
+lastPrintAt
+freshness
+status
+source
+simulated
+marketOpen
+circuitBreaker
+
+Circuit Breaker:
+
+status
+frozen
+frozenPrice
+frozenAt
+reason
+consecutiveOk
+threshold
+thresholdPct
+deviation
+releaseTicks
+
+IMPORTANTE:
+
+No todos estos campos necesariamente existen.
+
+Sólo mapear lo que exista realmente.
+
+--------------------------------------------------
+10. CCL
+--------------------------------------------------
+
+Revisar primero el backend.
+
+Buscar exactamente cómo se calcula y entrega CCL.
+
+Determinar si existen:
+
+reportedCcl
+impliedCcl
+cclSampled
+cclDeviation
+ccl
+
+No asumir:
+
+reportedCcl === ccl
+
+Si la UI necesita un alias ccl y el backend entrega reportedCcl, documentar explícitamente la decisión en normalize.js.
+
+No calcular un CCL nuevo desde el frontend.
+
+El frontend debe adaptar, no convertirse en otra fuente de cálculo financiero.
+
+--------------------------------------------------
+11. HEALTH
+--------------------------------------------------
+
+Normalizar la estructura REAL de:
+
+/health
+
+Como referencia conceptual:
+
+status
+timestamp
+oracle
+breaker
+hip3
+pusher
+
+Oracle puede incluir:
+
+symbol
+status
+source
+marketOpen
+lastFetchOkAt
+consecutiveFailures
+pollIntervalMs
+simulatedWalk
+
+Breaker puede incluir:
+
+frozen
+frozenPrice
+frozenAt
+reason
+consecutiveOk
+thresholdPct
+releaseTicks
+
+HIP-3 puede incluir:
+
+enabled
+dryRun
+isTestnet
+market
+publishIntervalMs
+publishing
+publishCount
+lastPublishAt
+lastPublishedPx
+consecutiveFailures
+lastError
+staleSkips
+skippingStale
+
+Pusher puede incluir:
+
+enabled
+contract
+intervalMs
+lastPushTx
+lastPushAt
+
+Pero nuevamente:
+
+EL BACKEND LOCAL TIENE PRIORIDAD SOBRE ESTA LISTA.
+
+--------------------------------------------------
+12. MARKET
+--------------------------------------------------
+
+Normalizar el payload REAL de:
+
+/market/YPF-PERP
+
+Como referencia:
+
+symbol
+markPrice
+indexPrice
+fundingRate
+maxLeverage
+marketStatus
+hip3
+oracleStatus
+oracleSource
+simulated
+lastPushTx
+lastPushAt
+
+Campos como:
+
+volume24h
+openInterest
+change24h
+history
+hyperCoreStatus
+hyperEvmStatus
+
+NO deben completarse desde demo cuando USE_DEMO_DATA=false.
+
+Si no existen en backend:
+
+dejar unavailable.
+
+--------------------------------------------------
+13. TIMESTAMPS
+--------------------------------------------------
+
+Crear o completar:
+
+js/utils/time.js
+
+Debe manejar:
+
+- Unix seconds
+- Unix milliseconds
+- ISO strings
+- null
+- undefined
+- fechas inválidas
+
+No utilizar:
+
+new Date(timestamp)
+
+sin determinar primero la unidad.
+
+La conversión debe estar centralizada.
+
+Freshness debe calcularse desde:
+
+timestamp
+
+o, si no existe:
+
+lastPrintAt
+
+Mantener separado:
+
+price freshness
+
+de:
+
+health.oracle.lastFetchOkAt
+
+--------------------------------------------------
+14. CIRCUIT BREAKER
+--------------------------------------------------
+
+No inventar estados.
+
+Si backend entrega:
+
+frozen: true
+
+la UI puede mostrar FROZEN.
+
+Si no existe información suficiente:
+
+UNAVAILABLE
+
+No inventar:
+
+CLEAR
+PASS
+RELEASED
+ACTIVE
+
+No convertir arbitrariamente:
+
+thresholdPct
+deviation
+releaseTicks
+
+Las unidades deben respetar el backend real.
+
+--------------------------------------------------
+15. SHARED STATE
+--------------------------------------------------
+
+Completar:
+
+js/state.js
+
+Modelo conceptual:
+
+{
+  loading: false,
+  lastRefresh: null,
+  snapshot: {
+    health: null,
+    oracle: null,
+    market: null
+  }
+}
+
+La carga debe obtener los recursos necesarios en paralelo.
+
+Preferentemente utilizar Promise.allSettled() para conservar respuestas parciales.
+
+Ejemplo:
+
+/health
+/oracle/price/YPF
+/market/YPF-PERP
+
+Si un endpoint falla y otro funciona:
+
+mantener el resultado válido.
+
+No borrar todo el snapshot.
+
+--------------------------------------------------
+16. DEMO MODE
+--------------------------------------------------
+
+Mantener:
+
+USE_DEMO_DATA=true
+
+Flujo:
+
+USE_DEMO_DATA=true
+    ↓
+demo-data.js
+    ↓
+modelo interno
+    ↓
+UI
+
+Demo mode NO debe hacer requests HTTP.
+
+No romper el fixture existente.
+
+--------------------------------------------------
+17. REAL MODE
+--------------------------------------------------
+
+Cuando:
+
+USE_DEMO_DATA=false
+
+usar:
+
+API client
+    ↓
+backend real
+    ↓
+normalize
+    ↓
+state
+    ↓
+UI
+
+No utilizar demo-data.js como fallback silencioso.
+
+Si backend falla:
+
+mostrar estado de error/unavailable.
+
+--------------------------------------------------
+18. MARKET PAGE
+--------------------------------------------------
+
+Modificar únicamente lo necesario en:
+
+markets/market.js
+
+Debe consumir:
+
+snapshot.market
+snapshot.oracle
+snapshot.health
+
+No debe hacer fetch directo.
+
+No debe interpretar JSON crudo.
+
+No debe conocer URLs.
+
+Debe hidratar el DOM existente.
+
+No reconstruir la página completa.
+
+--------------------------------------------------
+19. ORACLE PAGE
+--------------------------------------------------
+
+Modificar:
+
+oracle/oracle.js
+
+Debe consumir:
+
+snapshot.oracle
+snapshot.health
+
+No fetch directo.
+
+No JSON crudo.
+
+No rediseñar.
+
+--------------------------------------------------
+20. INFRASTRUCTURE PAGE
+--------------------------------------------------
+
+Modificar:
+
+infra/infrastructure.js
+
+Debe consumir:
+
+snapshot.health
+snapshot.oracle
+snapshot.market.hip3
+
+No afirmar estados operacionales de:
+
+HyperCore
+HyperEVM
+AssetOracle
+
+si el backend no entrega una señal inequívoca.
+
+--------------------------------------------------
+21. CHART
+--------------------------------------------------
+
+Revisar:
+
+js/components/chart.js
+
+En real mode:
+
+si backend no entrega history/series/candles:
+
+mostrar:
+
+Historical data unavailable
+
+No generar puntos falsos.
+
+No utilizar history del fixture en real mode.
+
+--------------------------------------------------
+22. ERROR HANDLING
+--------------------------------------------------
+
+Reutilizar:
+
+safeErrorMessage()
+emptyNotice()
+statusBadge()
+
+cuando corresponda.
+
+Nunca mostrar directamente:
+
+TypeError
+stack trace
+AbortError
+fetch failed
+errores internos del backend
+
+Clasificar:
+
+configuration
+network
+timeout
+aborted
+http
+invalid_json
+invalid_payload
+
+Permitir estados parciales.
+
+--------------------------------------------------
+23. TESTS
+--------------------------------------------------
+
+Ampliar:
+
+tests/smoke.mjs
+
+Cubrir:
+
+Oracle
+Market
+Health
+timestamps
+freshness
+Circuit Breaker
+CCL
+campos ausentes
+demo mode
+real mode
+
+Los tests no deben requerir backend ejecutándose.
+
+También verificar:
+
+npm test
+
+Y:
+
+node --check js/api/client.js
+node --check js/api/config.js
+node --check js/api/endpoints.js
+node --check js/api/index.js
+node --check js/api/normalize.js
+node --check js/components/chart.js
+node --check js/state.js
+node --check markets/market.js
+node --check oracle/oracle.js
+node --check infra/infrastructure.js
+node --check js/utils/time.js
+
+--------------------------------------------------
+24. BACKEND — MUY IMPORTANTE
+--------------------------------------------------
+
+El backend LOCAL debe ser inspeccionado antes de implementar.
+
+No modificar el backend.
+
+No corregir el backend desde esta tarea.
+
+Si encontrás diferencias entre:
+
+DOCUMENTACIÓN
+vs
+BACKEND LOCAL
+
+utilizar:
+
+BACKEND LOCAL
+
+como contrato real.
+
+Después de inspeccionar el backend, documentar brevemente cualquier diferencia relevante encontrada.
+
+Ejemplo:
+
+"El endpoint documentado era X, pero el backend actual expone Y."
+
+o:
+
+"El backend actual no entrega history, por lo que el frontend mantiene el chart como unavailable."
+
+No inventar respuestas.
+
+Si es posible ejecutar el backend local sin modificarlo, hacerlo para verificar los endpoints reales.
+
+Sólo realizar requests contra el backend LOCAL.
+
+No utilizar servicios externos.
+
+--------------------------------------------------
+25. VALIDACIÓN VISUAL
+--------------------------------------------------
+
+No modificar:
+
+- colores
+- tipografías
+- layout
+- responsive
+- tamaños
+- spacing
+- iconos
+- navegación
+
+El objetivo es:
+
+MISMA UI
++
+DATOS REALES
+
+No:
+
+NUEVA UI
+
+Primero validar:
+
+USE_DEMO_DATA=true
+
+Después:
+
+USE_DEMO_DATA=false
+
+si el backend local puede ejecutarse correctamente.
+
+--------------------------------------------------
+26. README
+--------------------------------------------------
+
+Actualizar el README sólo si es necesario.
+
+Documentar el estado REAL después de la implementación:
+
+- Data Layer
+- configuración
+- endpoints reales
+- demo mode
+- real mode
+- normalización
+- errores
+- tests
+- ejecución local
+
+No documentar funcionalidades no implementadas.
+
+--------------------------------------------------
+27. GIT
+--------------------------------------------------
+
+Antes de comenzar:
+
+git status
+git branch --show-current
+git log --oneline -5
+
+Al finalizar:
+
+git status
+git diff
+git diff --stat
+
+Revisar cuidadosamente el diff.
+
+NO incluir:
+
+backend
+blockchain
+wallet
+contratos
+deployment
+
+si no fueron modificados como parte explícita de esta tarea.
+
+Si existen cambios previos míos en el working tree:
+
+NO sobrescribirlos
+NO eliminarlos
+NO incluirlos en el commit
+
+Después:
+
+git add <archivos modificados de Fase 2>
+
+git commit -m "feat: implement frontend phase 2 data layer"
+
+git push
+
+Utilizar el remote existente.
+
+No crear un nuevo remote.
+
+Al terminar mostrar:
+
+- branch
+- commit
+- archivos modificados
+- resultado de tests
+- resultado de node --check
+- resultado del push
+- git status final
+
+--------------------------------------------------
+28. CRITERIO FINAL
+--------------------------------------------------
+
+La Fase 2 está terminada cuando:
+
+- frontend consume backend real
+- backend fue inspeccionado previamente
+- contratos utilizados corresponden al backend actual
+- URLs están centralizadas
+- existe HTTP client
+- existe timeout
+- existen errores clasificados
+- Health está normalizado
+- Oracle está normalizado
+- Market está normalizado
+- timestamps están normalizados
+- freshness está centralizada
+- Circuit Breaker no inventa estados
+- CCL tiene política explícita
+- demo mode continúa funcionando
+- real mode consume backend
+- real mode no usa demo como fallback silencioso
+- páginas no hacen fetch directo
+- páginas no interpretan JSON crudo
+- snapshot es compartido
+- errores parciales no destruyen recursos válidos
+- chart no fabrica histórico
+- campos inexistentes quedan unavailable
+- tests pasan
+- node --check pasa
+- diseño visual permanece intacto
+- blockchain no se integra
+- wallet no se integra
+- backend no se modifica
+- README refleja el estado real
+- cambios están commiteados
+- cambios están pusheados
+
+REGLA FINAL:
+
+No agregues funcionalidades fuera de Fase 2.
+
+No inventes contratos.
+
+No inventes campos.
+
+No inventes estados.
+
+No inventes valores financieros.
+
+No modifiques el backend para facilitar la integración.
+
+El backend LOCAL es la fuente de verdad para el contrato de datos.
+
+Si algo no puede determinarse con evidencia del backend o del código existente, dejalo como unavailable y documentá la limitación.
+
