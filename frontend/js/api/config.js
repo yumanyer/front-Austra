@@ -1,6 +1,6 @@
 const DEFAULT_CONFIG = {
   API_URL: "http://localhost:3000",
-  USE_DEMO_DATA: true,
+  USE_DEMO_DATA: false,
   REQUEST_TIMEOUT_MS: 5000,
 };
 

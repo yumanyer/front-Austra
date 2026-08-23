@@ -129,7 +129,7 @@ const originalConfig = globalThis.AUSTRAL_CONFIG;
 
 try {
   let fetchCalls = 0;
-  globalThis.AUSTRAL_CONFIG = { USE_DEMO_DATA: true };
+  globalThis.AUSTRAL_CONFIG = { USE_DEMO_DATA: false };
   globalThis.fetch = async () => {
     fetchCalls += 1;
     throw new Error("Demo mode must not fetch");
