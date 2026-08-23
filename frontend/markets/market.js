@@ -1,6 +1,6 @@
 import { updatePriceChart } from "../js/components/chart.js";
 import { bindPeriodButtons, formatField, formatMetric, formatFreshness, formatUpdated, loadMockSnapshot, setHidden, setMode, setStatus, setText, updateSystemStrip } from "../js/page-data.js";
-import { isAvailable, normalizeStatus, readableStatus } from "../js/utils.js";
+import { isAvailable, normalizeStatus, readableStatus } from "../js/utils/index.js";
 
 const root = document.querySelector(".market-page");
 const snapshot = loadMockSnapshot();

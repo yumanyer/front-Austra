@@ -7,6 +7,8 @@ import { formatMetric, formatUpdated } from "../js/page-data.js";
 
 const frontendRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const pageFiles = ["index.html", "markets/market.html", "oracle/oracle.html", "infra/infrastructure.html"];
+const stylesheetFiles = ["css/root.css", "css/media.css", "markets/markets.css", "oracle/oracle.css", "infra/infra.css"];
+const preparedDirectories = ["js/api", "js/blockchain", "js/wallet"];
 
 assert.equal(MOCK_SNAPSHOT.mode, "mock");
 assert.equal(MOCK_SNAPSHOT.market.data.marketStatus, "LIVE");
@@ -15,11 +17,16 @@ assert.match(formatMetric(42.315), /\$42\.315/);
 assert.equal(formatMetric(undefined), "—");
 assert.match(formatUpdated(MOCK_SNAPSHOT.fetchedAt), /^updated /);
 
+for (const relativePath of stylesheetFiles) assert.ok(fs.existsSync(path.join(frontendRoot, relativePath)), `${relativePath} should exist`);
+for (const relativePath of preparedDirectories) assert.ok(fs.existsSync(path.join(frontendRoot, relativePath)), `${relativePath} should exist`);
+
 for (const relativePath of pageFiles) {
   const html = fs.readFileSync(path.join(frontendRoot, relativePath), "utf8");
   assert.match(html, /<main\b/);
   assert.match(html, /<nav\b/);
   assert.match(html, /type="module"/);
+  assert.match(html, /\/css\/root\.css/);
+  assert.match(html, /\/css\/media\.css/);
   assert.doesNotMatch(html, /<div id="app"/);
   assert.doesNotMatch(html, /window\.AUSTRAL_CONFIG|fetch\(|innerHTML/);
 }

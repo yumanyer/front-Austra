@@ -33,11 +33,12 @@ Cada interfaz contiene su propia estructura semántica: encabezado, navegación,
 | Markets | `markets/market.html` + `markets/market.js` | Estructura del mercado, gráfico y métricas visuales. |
 | Oracle | `oracle/oracle.html` + `oracle/oracle.js` | Pipeline, métricas y circuito de protección visual. |
 | Infrastructure | `infra/infrastructure.html` + `infra/infrastructure.js` | Diagrama, flujo y tarjetas de componentes. |
-| Estilos compartidos | `css/styles.css` | Tokens, componentes, layout y breakpoints responsive. |
+| Estilos base | `css/root.css` | Variables, reset, base, shell y componentes globales. |
+| Responsive global | `css/media.css` | Breakpoints responsive y adaptación móvil. |
 | Estilos de inicio | `home/home.css` | Hero, tarjetas de interfaces y principios visuales. |
 | Comportamiento común | `js/app.js` | Menú móvil y marcado de navegación activa. |
 | Mock data | `js/mock-data.js` | Única fuente de valores visuales temporales. |
-| Utilidades | `js/page-data.js`, `js/utils.js` | Formateo y actualización de nodos existentes. |
+| Utilidades | `js/page-data.js`, `js/utils/` | Formateo y actualización de nodos existentes. |
 | Gráfico | `js/components/chart.js` | Actualiza el SVG estático del gráfico sin generar una página. |
 | Preview | `server.cjs` | Servidor estático local con rutas explícitas y protección de paths. |
 
@@ -73,12 +74,16 @@ oracle/oracle.html
 oracle/oracle.js
 infra/infrastructure.html
 infra/infrastructure.js
-css/styles.css
+css/root.css
+css/media.css
 js/app.js
 js/mock-data.js
 js/page-data.js
-js/utils.js
+js/utils/index.js
 js/components/chart.js
+js/api/
+js/blockchain/
+js/wallet/
 server.cjs
 package.json
 package-lock.json

@@ -1,5 +1,5 @@
 import { MOCK_SNAPSHOT } from "./mock-data.js";
-import { formatNumber, formatPercent, formatPrice, isAvailable, normalizeStatus, readableStatus, statusTone } from "./utils.js";
+import { formatNumber, formatPercent, formatPrice, isAvailable, normalizeStatus, readableStatus, statusTone } from "./utils/index.js";
 
 export function loadMockSnapshot() {
   return JSON.parse(JSON.stringify(MOCK_SNAPSHOT));

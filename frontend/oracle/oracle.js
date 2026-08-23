@@ -1,5 +1,5 @@
 import { formatField, formatMetric, formatUpdated, loadMockSnapshot, setHidden, setMode, setStatus, setText, updateSystemStrip } from "../js/page-data.js";
-import { formatBoolean, isAvailable, normalizeStatus, readableStatus } from "../js/utils.js";
+import { formatBoolean, isAvailable, normalizeStatus, readableStatus } from "../js/utils/index.js";
 
 const root = document.querySelector(".oracle-page");
 const snapshot = loadMockSnapshot();

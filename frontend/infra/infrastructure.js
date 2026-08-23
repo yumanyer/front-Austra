@@ -1,5 +1,5 @@
 import { loadMockSnapshot, setHidden, setMode, setStatus, setText, updateSystemStrip } from "../js/page-data.js";
-import { isAvailable, readableStatus } from "../js/utils.js";
+import { isAvailable, readableStatus } from "../js/utils/index.js";
 
 const root = document.querySelector(".infra-page");
 const snapshot = loadMockSnapshot();
