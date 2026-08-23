@@ -69,10 +69,11 @@ El resultado se cachea en memoria (`latestPrice`) y lo sirven `/oracle/price/:sy
 
 ## Configuración (`.env`)
 
-Todo pasa por `src/config.js`: valores inválidos no tiran la app al importar el módulo, caen al default y se acumulan en `configErrors`, que `index.js` reporta antes de rehusarse a arrancar. Los `.env` se cargan con el flag nativo de Node `--env-file-if-exists` (raíz primero, después `backend/`, así que el local gana; variables reales de shell/CI ganan a ambos) — no hay dependencia de `dotenv`.
+Todo pasa por `src/config.js`: valores inválidos no tiran la app al importar el módulo, caen al default y se acumulan en `configErrors`, que `index.js` reporta antes de rehusarse a arrancar. Los `.env` se cargan con el flag nativo de Node `--env-file-if-exists` (raíz primero, después `backend/`, así que el local gana; variables reales de shell/CI ganan a ambos) — no hay dependencia de `dotenv`. En producción, Nginx publica `/api/*` y hace proxy al listener privado del backend en `127.0.0.1:3000`; no se expone el puerto del backend directamente.
 
 | Variable | Default | Descripción |
 |----------|---------|-------------|
+| `HOST` | `127.0.0.1` | Dirección de escucha; loopback por defecto para mantener el backend privado detrás de Nginx |
 | `PORT` | `3000` | Puerto del servidor |
 | `DATA912_BASE_URL` | `https://data912.com` | Base de la API Data912 (pública, sin auth) |
 | `DATA912_TIMEOUT_MS` | `5000` | Timeout por request |
@@ -140,6 +141,8 @@ Todo pasa por `src/config.js`: valores inválidos no tiran la app al importar el
 
 ## Scripts disponibles
 
+El entrypoint real es `src/index.js`. El comando de producción definido en `package.json` es `npm start`; `npm run dev` agrega `--watch` para desarrollo. Para PM2 se utiliza el archivo [`../deploy/pm2/ecosystem.config.cjs`](../deploy/pm2/ecosystem.config.cjs), con el proceso `austral-backend`.
+
 ```bash
 # Desde la carpeta backend/
 npm run dev            # Inicia con hot-reload (node --watch)
@@ -189,6 +192,10 @@ El frontend no llama estas funciones ni usa ABI: sólo muestra metadata y, en In
 - **HyperEVM**: mirror auditable vía `YPFOracle`, deshabilitado hasta configurar `ORACLE_CONTRACT_ADDRESS` + `PUSHER_PRIVATE_KEY`.
 - **Frontend**: consume `/market/YPF-PERP` y `/oracle/price/YPF`; Infrastructure consulta además el RPC read-only configurado para verificar deployments, sin firmar.
 - **Tests**: 58 casos (`node --test` en la validación actual) cubriendo config, EMA, circuit breaker, normalizer, oracle end-to-end y HIP-3 (publisher/deployer).
+
+## Deployment VPS
+
+La plantilla Nginx y el procedimiento PM2 se encuentran en [`../deploy/README.md`](../deploy/README.md). La configuración está preparada, pero la instalación real en una VPS, la IP pública, las reglas OCI, el dominio, HTTPS y los backups siguen `PENDING` hasta verificarse en la instancia.
 
 ## Próximos pasos / TODOs
 

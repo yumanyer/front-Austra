@@ -52,7 +52,7 @@ for (const signal of ['SIGINT', 'SIGTERM']) {
 }
 
 try {
-  await fastify.listen({ port: config.port, host: '0.0.0.0' });
+  await fastify.listen({ port: config.port, host: config.host });
   console.log(`austral.fi backend running on port ${config.port}`);
 } catch (err) {
   fastify.log.error(err);

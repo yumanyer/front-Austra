@@ -141,6 +141,7 @@ const corsOrigins = corsOriginsRaw === '*'
 
 export const config = deepFreeze({
   port: int('PORT', 3000, { min: 1, max: 65535 }),
+  host: str('HOST', '127.0.0.1'),
   corsOrigins,
 
   data912: {

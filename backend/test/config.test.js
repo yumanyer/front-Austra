@@ -20,15 +20,17 @@ test('defaults resolve without any environment', async () => {
   const { config, configErrors } = await loadWith({});
   assert.deepEqual(configErrors, []);
   assert.equal(config.port, 3000);
+  assert.equal(config.host, '127.0.0.1');
   assert.equal(config.oracle.emaAlpha, 0.2);
   assert.equal(config.oracle.breakerReleaseTicks, 3);
   assert.equal(config.data912.baseUrl, 'https://data912.com');
 });
 
 test('valid overrides are applied', async () => {
-  const { config, configErrors } = await loadWith({ PORT: '4000', ORACLE_EMA_ALPHA: '0.5', ORACLE_SIMULATED_WALK: 'true' });
+  const { config, configErrors } = await loadWith({ HOST: '127.0.0.1', PORT: '4000', ORACLE_EMA_ALPHA: '0.5', ORACLE_SIMULATED_WALK: 'true' });
   assert.deepEqual(configErrors, []);
   assert.equal(config.port, 4000);
+  assert.equal(config.host, '127.0.0.1');
   assert.equal(config.oracle.emaAlpha, 0.5);
   assert.equal(config.oracle.simulatedWalk, true);
 });

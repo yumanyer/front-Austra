@@ -68,7 +68,7 @@ El frontend es estático y no utiliza frameworks ni dependencias de frontend. Su
 | `/oracle/oracle.html` | Oracle |
 | `/infra/infrastructure.html` | Infrastructure |
 
-La Data Layer centraliza `API_URL`, timeouts, modo demo y el RPC de Infrastructure. En modo real solicita en paralelo `/health`, `/oracle/price/YPF` y `/market/YPF-PERP`; conserva errores por recurso y no convierte automáticamente un error en datos demo. El modo demo sólo se activa explícitamente con `USE_DEMO_DATA=true`.
+La Data Layer centraliza `API_URL`, timeouts, modo demo y el RPC de Infrastructure. En producción, `frontend/js/env.js` define `API_URL: "/api"`; Nginx proxifica ese prefijo hacia las rutas backend reales sin prefijo. En modo real solicita en paralelo `/health`, `/oracle/price/YPF` y `/market/YPF-PERP`; conserva errores por recurso y no convierte automáticamente un error en datos demo. El modo demo sólo se activa explícitamente con `USE_DEMO_DATA=true`.
 
 Market muestra Price, EMA, Data source, Mark Price, Index Price, Funding Rate y Max Leverage desde el modelo real o el fixture seleccionado. `frontend/js/presentation-data.js` contiene exclusivamente el valor visual de Volume, Open Interest y las series 1H/1D/1W porque el contrato HTTP actual no garantiza esos campos.
 
@@ -97,6 +97,7 @@ La configuración se carga desde variables de entorno, un `.env` raíz opcional 
 
 | Variable | Default | Uso |
 |---|---:|---|
+| `HOST` | `127.0.0.1` | Listener privado detrás de Nginx |
 | `PORT` | `3000` | Puerto HTTP |
 | `DATA912_BASE_URL` | `https://data912.com` | Fuente externa de precios |
 | `ORACLE_SYMBOL` | `YPF` | ADR que alimenta el Oracle |
@@ -140,6 +141,12 @@ npm run test
 `DeployMarket.s.sol` despliega `YPFOracle`, opcionalmente `KinetiqLaunchMock` con `DEPLOY_MOCK=true`, y ejecuta `deployMarket`. Los scripts de activación, bonding y push de precio son operaciones de deployment/operación separadas. `contracts/abi/YPFOracle.json` se genera desde los artefactos de Foundry mediante `npm run build` o `npm run abi:sync`; no se edita manualmente.
 
 La red de testnet configurada en `foundry.toml` es Hyperliquid Testnet, con alias `hyperliquid_testnet`, RPC `https://rpc.hyperliquid-testnet.xyz/evm` y chain ID `998`. Las direcciones concretas de deployment deben leerse desde los artefactos, variables o explorer correspondiente; no se infieren de la UI.
+
+## Deployment VPS
+
+La configuración versionada para Ubuntu 24.04 + Nginx + PM2 se encuentra en [`deploy/README.md`](deploy/README.md), [`deploy/nginx/austral.conf`](deploy/nginx/austral.conf) y [`deploy/pm2/ecosystem.config.cjs`](deploy/pm2/ecosystem.config.cjs). El backend real inicia en `backend/src/index.js` mediante `npm start`, escucha en `127.0.0.1:3000` por defecto y se publica externamente sólo a través de `/api/*`.
+
+El código de deployment está preparado localmente; la instalación efectiva en una VPS, la IP pública, VCN/subnet, Security List, firewall, dominio, HTTPS y backups siguen `PENDING` hasta validarse en la instancia. No se ejecutaron cambios remotos, no se modificaron reglas de OCI y no se subieron secretos.
 
 ## Estados implementados y pendientes
 

@@ -1,5 +1,5 @@
 const DEFAULT_CONFIG = {
-  API_URL: "http://localhost:3000",
+  API_URL: "/api",
   USE_DEMO_DATA: false,
   REQUEST_TIMEOUT_MS: 5000,
   RPC_URL: "https://rpc.hyperliquid-testnet.xyz/evm",

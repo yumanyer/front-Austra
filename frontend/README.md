@@ -81,6 +81,7 @@ frontend/
 │   │   └── common.js
 │   │
 │   ├── app.js
+│   ├── env.js
 │   ├── demo-data.js
 │   ├── presentation-data.js
 │   ├── state.js
@@ -113,6 +114,8 @@ frontend/
 ├── server.cjs
 └── README.md
 ```
+
+La configuración de deployment VPS vive en el nivel raíz, fuera de `frontend/`: [`../deploy/README.md`](../deploy/README.md), [`../deploy/nginx/austral.conf`](../deploy/nginx/austral.conf) y [`../deploy/pm2/ecosystem.config.cjs`](../deploy/pm2/ecosystem.config.cjs).
 
 ---
 
@@ -166,21 +169,21 @@ DOM
 
 ## 5. Configuración central
 
-La configuración principal se encuentra en `js/api/config.js`:
+La configuración de runtime para producción se carga desde `js/env.js` antes del módulo de cada página. `js/api/config.js` mantiene el mismo default relativo como defensa adicional:
 
 ```
-const DEFAULT_CONFIG = {
-  API_URL: "http://localhost:3000",
-  USE_DEMO_DATA: false,
-  REQUEST_TIMEOUT_MS: 5000,
+window.AUSTRAL_CONFIG = {
+  API_URL: "/api",
 };
 ```
 
 | Variable | Valor por defecto | Propósito |
 | --- | --- | --- |
-| `API_URL` | `http://localhost:3000` | URL base del backend. |
+| `API_URL` | `/api` | Prefijo same-origin que Nginx proxifica hacia las rutas reales del backend. |
 | `USE_DEMO_DATA` | `false` | Selecciona backend real o fixture principal. |
-| `REQUEST_TIMEOUT_MS` | `5000` | Tiempo máximo de espera de una solicitud. |
+| `REQUEST_TIMEOUT_MS` | `5000` | Tiempo máximo de espera de una solicitud HTTP. |
+| `RPC_URL` | `https://rpc.hyperliquid-testnet.xyz/evm` | RPC read-only usado exclusivamente por Infrastructure. |
+| `RPC_TIMEOUT_MS` | `5000` | Tiempo máximo de espera de una consulta RPC. |
 
 ### Modo real
 
@@ -239,7 +242,9 @@ Y queda disponible en:
 http://127.0.0.1:4173
 ```
 
-Durante el desarrollo local, frontend y backend utilizan orígenes diferentes. El backend debe permitir explícitamente el origen del frontend mediante CORS:
+El preview estático es una herramienta de desarrollo. La configuración de producción usa `/api` same-origin detrás de Nginx; el backend escucha en loopback y el navegador no debe apuntar directamente a `http://localhost:3000` ni a una IP pública con puerto de backend. Durante el desarrollo local, si se necesita consultar el backend directamente, debe usarse una configuración local no commiteada o un proxy de desarrollo, sin modificar `js/env.js` de producción.
+
+Durante el desarrollo local con orígenes diferentes, el backend puede permitir explícitamente el origen mediante CORS:
 
 ```
 Frontend: http://127.0.0.1:4173

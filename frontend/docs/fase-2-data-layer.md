@@ -104,18 +104,18 @@ La configuración debe continuar siendo central y modificable sin editar cada p�
 | `ORACLE_PRICE` | `GET` | `/oracle/price/YPF` | Precio, EMA, referencias de mercado y señales del breaker |
 | `MARKET` | `GET` | `/market/YPF-PERP` | Instrumento técnico; la UI lo presenta como `YPF-USDC`, junto con precios, funding, leverage y señales HIP-3 |
 
-La base de URL de desarrollo puede ser `http://localhost:3000`, pero ese valor no debe quedar hardcodeado dentro de `market.js`, `oracle.js`, `infrastructure.js` ni en normalizadores. La configuración aplicada mantiene HTTP y RPC read-only separados:
+La configuración de producción mantiene HTTP y RPC read-only separados. `frontend/js/env.js` se carga antes de los módulos de página y define una base same-origin; `config.js` conserva el mismo default relativo:
 
 ```js
 window.AUSTRAL_CONFIG = {
-  API_URL: "http://localhost:3000",
+  API_URL: "/api",
   USE_DEMO_DATA: false,
   RPC_URL: "https://rpc.hyperliquid-testnet.xyz/evm",
   RPC_TIMEOUT_MS: 5000
 };
 ```
 
-`RPC_URL` sólo alimenta la consulta on-chain de Infrastructure. Si el endpoint no responde, si devuelve una cadena distinta de `998` o si una respuesta no puede comprobarse, la UI conserva metadata registrada pero muestra el estado verificable como `UNAVAILABLE` o `ERROR`; no activa un fallback demo silencioso.
+Nginx recibe `/api/...` y lo proxifica hacia las rutas backend reales sin prefijo. El preview estático local continúa siendo una herramienta de desarrollo y no debe volver a introducir un host público o localhost en la configuración versionada. `RPC_URL` sólo alimenta la consulta on-chain de Infrastructure. Si el endpoint no responde, si devuelve una cadena distinta de `998` o si una respuesta no puede comprobarse, la UI conserva metadata registrada pero muestra el estado verificable como `UNAVAILABLE` o `ERROR`; no activa un fallback demo silencioso.
 
 ## 5. Modelo normalizado de Oracle
 
