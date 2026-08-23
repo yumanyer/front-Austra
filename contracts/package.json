@@ -1,0 +1,18 @@
+{
+  "name": "@austral/contracts",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "build": "forge build && node script/sync-abi.mjs",
+    "test": "forge test -vvv",
+    "abi:sync": "node script/sync-abi.mjs",
+    "deploy": "forge script script/DeployMarket.s.sol --rpc-url hyperliquid_testnet --broadcast -vvvv",
+    "deploy:local": "forge script script/DeployMarket.s.sol --rpc-url http://localhost:8545 --broadcast -vvvv",
+    "activate": "forge script script/ActivateMarket.s.sol --rpc-url hyperliquid_testnet --broadcast -vvvv",
+    "bond": "forge script script/BondMarket.s.sol --rpc-url hyperliquid_testnet --broadcast -vvvv",
+    "push-price": "forge script script/PushPrice.s.sol --rpc-url hyperliquid_testnet --broadcast -vvvv"
+  },
+  "dependencies": {
+    "@nktkas/hyperliquid": "^0.9.0"
+  }
+}

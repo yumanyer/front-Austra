@@ -1,0 +1,20 @@
+{
+  "name": "@austral/backend",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node --env-file-if-exists=../.env --env-file-if-exists=.env --watch src/index.js",
+    "start": "node --env-file-if-exists=../.env --env-file-if-exists=.env src/index.js",
+    "test": "node --test test/*.test.js",
+    "hip3:preflight": "node --env-file-if-exists=../.env --env-file-if-exists=.env src/hip3/preflight.js",
+    "hip3:deploy": "node --env-file-if-exists=../.env --env-file-if-exists=.env src/hip3/deployer.js"
+  },
+  "dependencies": {
+    "@fastify/cors": "^11.3.0",
+    "@fastify/rate-limit": "^10.2.2",
+    "@nktkas/hyperliquid": "^0.33.3",
+    "fastify": "^5.2.1",
+    "viem": "^2.21.0"
+  }
+}
