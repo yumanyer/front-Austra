@@ -3,7 +3,7 @@ export const DEPLOYMENT_METADATA = Object.freeze({
   chainId: 998,
   deploymentBlock: 62293050,
   deployer: "0x47C1D6b51B1f3d00f4D5e78B85486D4b7136eBE2",
-  market: "YPF-PERP",
+  market: "YPF-USDC",
   underlying: "YPF",
   maxLeverage: "5x",
   totalCost: "0.00103711 ETH",
@@ -36,7 +36,7 @@ export const DEPLOYMENT_METADATA = Object.freeze({
     },
     {
       key: "marketDeploy",
-      label: "YPF-PERP deployMarket call",
+      label: "YPF-USDC deployMarket call",
       hash: "0xf40bb65f0aeb21687dbb4998decb930c926c839cfeb2817c4722dc4c2e3b122",
     },
   ],

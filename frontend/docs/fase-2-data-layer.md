@@ -8,6 +8,8 @@ La Fase 2 prepara el frontend de AustralFinance para consumir el backend real me
 
 En esta implementación se modificó únicamente el frontend dentro del alcance de la Data Layer y el cierre visual read-only de Infrastructure. Los cambios HTML/CSS conservan branding, layout, tipografías, colores, responsive y navegación; no se alteraron Market, Oracle, backend, contratos ni wallet. Además de las requests HTTP contra `/health`, `/oracle/price/YPF` y `/market/YPF-PERP`, Infrastructure consulta el JSON-RPC público configurado de Hyperliquid Testnet sólo para verificar estado on-chain, sin firmar ni enviar transacciones.
 
+`YPF-USDC` es el símbolo visible del frontend. `/market/YPF-PERP` se conserva como ruta técnica porque es el endpoint que el backend actual implementa; esta tarea no migra la identidad del backend ni la del mercado HIP-3.
+
 La especificación de referencia vigente es `pasted_content_5.txt`, con `pasted_content_4.txt` como contexto inmediato de implementación. El estado observado incluye el backend local sincronizado y el frontend sobre el que se aplicó la Data Layer.
 
 ## 2. Estado actual observado
@@ -100,7 +102,7 @@ La configuración debe continuar siendo central y modificable sin editar cada p�
 |---|---:|---|---|
 | `HEALTH` | `GET` | `/health` | Estado del sistema, Oracle, breaker, HIP-3 y pusher cuando estén presentes |
 | `ORACLE_PRICE` | `GET` | `/oracle/price/YPF` | Precio, EMA, referencias de mercado y señales del breaker |
-| `MARKET` | `GET` | `/market/YPF-PERP` | Instrumento, precios perpetuos, funding, leverage y señales HIP-3 |
+| `MARKET` | `GET` | `/market/YPF-PERP` | Instrumento técnico; la UI lo presenta como `YPF-USDC`, junto con precios, funding, leverage y señales HIP-3 |
 
 La base de URL de desarrollo puede ser `http://localhost:3000`, pero ese valor no debe quedar hardcodeado dentro de `market.js`, `oracle.js`, `infrastructure.js` ni en normalizadores. La configuración aplicada mantiene HTTP y RPC read-only separados:
 
@@ -287,7 +289,7 @@ HealthModel
     └── lastPushAt
 ```
 
-La normalización de Health debe preservar la ausencia de cada subobjeto. Por ejemplo, si el backend no informa `hip3.enabled`, Infrastructure no debe convertir la mera existencia del concepto HIP-3 en un estado `ACTIVE`. Los conceptos arquitectónicos `HyperCore`, `HyperEVM` y `AssetOracle` pueden permanecer visibles como información estática, pero sólo pueden recibir un estado operativo si existe una señal backend inequívoca.
+La normalización de Health debe preservar la ausencia de cada subobjeto. Por ejemplo, si el backend no informa `hip3.enabled`, Infrastructure no debe convertir la mera existencia del concepto HIP-3 en un estado `ACTIVE`. Los conceptos arquitectónicos `HyperCore`, `HyperEVM` y `YPFOracle` pueden permanecer visibles como información estática, pero sólo pueden recibir un estado operativo si existe una señal backend o RPC inequívoca.
 
 ## 10. Modelo normalizado de Market
 
@@ -451,7 +453,7 @@ La siguiente lista registra el estado de la implementación actual. El contrato 
 | Metadata y receipts de deployment se presentan read-only | **Implementado con fallback explícito** |
 
 ## 17. Validación contra el backend real
-La implementación se ejecutó sobre la copia local completa y el backend fue utilizado como fuente de verdad. Se confirmaron las rutas parametrizadas `GET /health`, `GET /oracle/price/:symbol` y `GET /market/:symbol`, sus parámetros `YPF` y `YPF-PERP`, timestamps Unix en segundos, los modelos Oracle/Market y los subobjetos Health. En runtime, `/health`, `/oracle/price/YPF` y `/market/YPF-PERP` respondieron `200` con el backend local. Oracle entregó precio real con `source: "ema_fallback"` y Market entregó `markPrice`, `indexPrice`, `fundingRate: 0`, `maxLeverage` y estado `offline`. El frontend conserva esos campos reales y aplica únicamente la capa visual separada para Volume, Open Interest e histórico.
+La implementación se ejecutó sobre la copia local completa y el backend fue utilizado como fuente de verdad. Se confirmaron las rutas parametrizadas `GET /health`, `GET /oracle/price/:symbol` y `GET /market/:symbol`, sus parámetros `YPF` y `YPF-PERP`, timestamps Unix en segundos, los modelos Oracle/Market y los subobjetos Health. El frontend muestra `YPF-USDC` como alias visual sin cambiar el path técnico. En runtime, `/health`, `/oracle/price/YPF` y `/market/YPF-PERP` respondieron `200` con el backend local. Oracle entregó precio real con `source: "ema_fallback"` y Market entregó `markPrice`, `indexPrice`, `fundingRate: 0`, `maxLeverage` y estado `offline`. El frontend conserva esos campos reales y aplica únicamente la capa visual separada para Volume, Open Interest e histórico.
 
 La revisión final del diff confirmó que los cambios se limitan al frontend: Infrastructure agrega metadata estática de deployment, tarjetas on-chain y verificación JSON-RPC read-only. No se alteraron branding, layout, tipografías, colores, navegación, Market, Oracle, backend, contracts ni wallet. No se agregaron ABI, Web3, ethers, viem, firma o envío de transacciones. HIP-3 y HyperCore permanecen `UNAVAILABLE` porque no existe una señal inequívoca de activación en los recursos consultados.
 

@@ -60,7 +60,7 @@ export const DEMO_SNAPSHOT = {
     status: "success",
     error: null,
     data: {
-      symbol: "YPF-PERP",
+      symbol: "YPF-USDC",
       markPrice: 42.32,
       indexPrice: 42.315,
       fundingRate: 0.0001,

@@ -95,13 +95,13 @@ assert.equal(incompleteOracle.ccl, undefined);
 assert.equal(incompleteOracle.crossCheck, undefined);
 
 const market = normalizeMarket({
-  symbol: "YPF-PERP",
+  symbol: "YPF-USDC",
   markPrice: 42.32,
   indexPrice: 42.315,
   fundingRate: 0.01,
   maxLeverage: 5,
   marketStatus: "LIVE",
-  hip3: { enabled: true, status: "ACTIVE", market: "YPF-PERP" },
+  hip3: { enabled: true, status: "ACTIVE", market: "YPF-USDC" },
   oracleStatus: "valid",
   oracleSource: "data912",
   simulated: false,
@@ -109,7 +109,7 @@ const market = normalizeMarket({
   lastPushAt: null,
   series: [{ timestamp: "2026-08-23T00:00:00Z", price: 42.1, ema: 42.0 }],
 });
-assert.equal(market.symbol, "YPF-PERP");
+assert.equal(market.symbol, "YPF-USDC");
 assert.equal(market.markPrice, 42.32);
 assert.equal(market.indexPrice, 42.315);
 assert.equal(market.fundingRate, 0.01);
@@ -126,10 +126,10 @@ assert.equal(market.history, undefined);
 assert.equal(market.volume24h, undefined);
 assert.equal(market.openInterest, undefined);
 
-const zeroFundingMarket = normalizeMarket({ symbol: "YPF-PERP", markPrice: 42.32, fundingRate: 0 });
+const zeroFundingMarket = normalizeMarket({ symbol: "YPF-USDC", markPrice: 42.32, fundingRate: 0 });
 assert.equal(zeroFundingMarket.fundingRate, 0);
 
-const marketWithoutHistory = normalizeMarket({ symbol: "YPF-PERP", markPrice: 42.32 });
+const marketWithoutHistory = normalizeMarket({ symbol: "YPF-USDC", markPrice: 42.32 });
 assert.equal(marketWithoutHistory.history, undefined);
 assert.equal(marketWithoutHistory.openInterest, undefined);
 assert.equal(marketWithoutHistory.hyperCoreStatus, undefined);

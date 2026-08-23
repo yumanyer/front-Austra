@@ -21,7 +21,9 @@ Todo lo demás (matching, custodia, liquidación, orden de mercado) lo resuelve 
 ```text
 Data912 API ──► Backend (normalización + EMA + circuit breaker) ──► Pusher ──► YPFOracle (HyperEVM)
                                                                                     │
-Frontend ◄── API backend (/oracle/price, /market/YPF-PERP) ◄────────────────────────┘
+Frontend ◄── API backend (/oracle/price/YPF, /market/YPF-PERP) ◄────────────────────────┘
+
+La UI presenta el alias `YPF-USDC`; el backend y los scripts de contracts mantienen la identidad técnica `YPF-PERP` hasta una migración coordinada.
 ```
 
 El circuit breaker y la EMA viven en el **backend** (fuera de horario de mercado se pushea la EMA). El contrato solo almacena el precio resultante y expone su frescura.
@@ -97,7 +99,7 @@ npm run test         # forge test -vvv
 forge test --match-test isFresh    # filtrar tests
 ```
 
-17 tests en 2 suites: validaciones del oracle (precio cero, timestamp futuro, overwrites, frescura con `vm.warp`, fuzzing) y ciclo completo del mock (happy path, eventos, reverts fuera de orden).
+Los tests de Foundry cubren validaciones del oracle (precio cero, timestamp futuro, overwrites, frescura con `vm.warp`, fuzzing) y el ciclo completo del mock (happy path, eventos y reverts fuera de orden). Ejecutar `npm run test` para obtener el conteo actual; no fijar un número histórico en esta documentación.
 
 ### Demo local end-to-end (Anvil)
 
@@ -119,6 +121,8 @@ npm run push-price
 Equivalente bash: exportar las variables con `export VAR=value`.
 
 ### Testnet (HyperEVM)
+
+Red configurada: Hyperliquid Testnet, chain ID `998`, RPC `https://rpc.hyperliquid-testnet.xyz/evm`. Las direcciones y receipts de un deployment concreto deben verificarse contra el explorer/RPC, no inferirse desde el frontend.
 
 ```bash
 # .env: DEPLOYER_PRIVATE_KEY, HYPERLIQUID_TESTNET_RPC ya tiene default
@@ -145,7 +149,7 @@ Ver `.env.example`. Resumen:
 | `ORACLE_CONTRACT_ADDRESS` | Dirección del `YPFOracle` deployado |
 | `KINETIQ_LAUNCH_ADDRESS` | Mock rehearsal o `EXFactory` real cuando esté disponible |
 | `DEPLOY_MOCK` | `true` → `DeployMarket` deploya también el mock |
-| `MARKET_NAME` / `UNDERLYING` / `MAX_LEVERAGE` | Parámetros del mercado (default `YPF-PERP` / `YPF` / `5`) |
+| `MARKET_NAME` / `UNDERLYING` / `MAX_LEVERAGE` | Parámetros del mercado para backend/contracts (default `YPF-PERP` / `YPF` / `5`); la UI frontend muestra `YPF-USDC` |
 | `PUSH_PRICE_USD6` | Precio para el push manual (1e6) |
 
 ⚠️ Nunca commitear `.env`. Está ignorado por `.gitignore`; si una clave real llegó a commitearse, rotarla inmediatamente.
@@ -163,14 +167,16 @@ Motivación: si el contrato cambia (nuevas funciones, parámetros) y el ABI qued
 
 > Nota Windows: usar siempre el script Node, no redirects de consola (`>` en PowerShell produce UTF-16 con BOM que rompe `JSON.parse`).
 
-## Integración con el backend (pendiente)
+## Integración con el backend
 
-Cuando se implemente el pusher recurrente en el backend:
+El backend ya contiene el pusher recurrente de HyperEVM y el publisher HIP-3, ambos protegidos por configuración. Para habilitar el pusher EVM:
 
 1. Completar en `backend/.env`: `ORACLE_CONTRACT_ADDRESS` (impreso por `DeployMarket`) y `PUSHER_PRIVATE_KEY`.
 2. Rotar el pusher on-chain si hace falta: `oracle.setPusher(<wallet backend>)` (transacción única del owner).
-3. Apuntar el ABI del backend a `contracts/abi/YPFOracle.json`.
-4. El endpoint `/market/YPF-PERP` ya expone `lastPushTx` / `marketStatus` para la demo.
+3. Mantener el ABI sincronizado en `contracts/abi/YPFOracle.json`.
+4. El endpoint `/market/YPF-PERP` expone `lastPushTx`, `lastPushAt` y `marketStatus`.
+
+El publisher HIP-3 sigue en `HIP3_DRY_RUN=true` por defecto y requiere `HIP3_ENABLED=true` más `HIP3_ORACLE_UPDATER_KEY` para enviar. La integración con el `EXFactory` real de Kinetiq continúa `Planned`; `KinetiqLaunchMock` sólo cubre rehearsal.
 
 ## Roadmap técnico
 

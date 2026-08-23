@@ -7,8 +7,8 @@ El backend es un servicio **Fastify** (Node.js, ESM) que actúa como el componen
 1. **Obtener precios** de Data912 para el activo pilot (`YPF`, ADR + ticker local BYMA `YPFD`).
 2. **Normalizar y validar** los datos: sanity del book, cross-check vs. el CCL de referencia, EMA (Media Móvil Exponencial), circuit breaker.
 3. **Servir APIs** públicas que el frontend consume (`/health`, `/oracle/price/:symbol`, `/market/:symbol`).
-4. **Publicar el precio a HyperCore** vía HIP-3 (`perpDeploy.setOracle`) — el feed real que usa el perp para funding y liquidaciones.
-5. **Espejar el precio on-chain en HyperEVM**, empujándolo a un contrato oracle (`AssetOracle.sol`) como mirror auditable — no es el feed que lee HyperCore.
+4. **Publicar el precio a HyperCore** vía HIP-3 (`perpDeploy.setOracle`) — integración preparada, deshabilitada por defecto y en dry-run por defecto.
+5. **Espejar el precio on-chain en HyperEVM** mediante `YPFOracle` cuando se configuren address y clave del pusher — es un mirror auditable y no el feed que lee HyperCore.
 
 ---
 
@@ -28,7 +28,7 @@ src/
 │   ├── ema.js             # EMA con alpha configurable, seed desde closes históricos
 │   └── circuitBreaker.js  # Congela el precio si la desviación o el cross-check de CCL disparan el umbral
 ├── pusher/
-│   └── hipPusher.js       # Mirror EVM: firma pushPrice(symbol, price6, ts) en AssetOracle.sol (viem)
+│   └── hipPusher.js       # Mirror EVM: firma pushPrice(symbol, price6, ts) en YPFOracle (viem)
 ├── hip3/
 │   ├── infoClient.js      # Cliente POST a /info de Hyperliquid, con reintentos/backoff
 │   ├── preflight.js       # Checklist read-only: key firmante, stake, dex libre, colateral, auction
@@ -63,7 +63,7 @@ El resultado se cachea en memoria (`latestPrice`) y lo sirven `/oracle/price/:sy
 |--------|------|-------------|
 | `GET` | `/health` | Estado del proceso + `oracle` (oracleHealth), `breaker` (circuit breaker), `hip3` (publisher a HyperCore), `pusher` (mirror EVM) |
 | `GET` | `/oracle/price/:symbol` | `OraclePriceResponse` — price, ema, lastPrint, bid/ask/spread, cross-check CCL, status, source, marketOpen. 404 si el símbolo no es el configurado, 503 si el oracle no arrancó |
-| `GET` | `/market/:symbol` | `MarketResponse` para el perp `{ORACLE_SYMBOL}-PERP` — markPrice, indexPrice, fundingRate (placeholder), maxLeverage (de la margin table), marketStatus (`live`/`rehearsal`/`offline`), estado de HIP-3 y del pusher |
+| `GET` | `/market/:symbol` | `MarketResponse` para el perp `{ORACLE_SYMBOL}-PERP` — markPrice, indexPrice, fundingRate (cálculo acotado mientras el venue está abierto), maxLeverage (de la margin table), marketStatus (`live`/`rehearsal`/`offline`), estado de HIP-3 y del pusher. La UI puede mostrar el alias `YPF-USDC`, pero la ruta técnica actual permanece `YPF-PERP`. |
 
 ---
 
@@ -130,7 +130,7 @@ Todo pasa por `src/config.js`: valores inválidos no tiran la app al importar el
    ┌─────────────────────┐    ┌─────────────────────┐
    │  HIP-3 publisher     │    │   Pusher EVM          │
    │ perpDeploy.setOracle │    │ pushPrice() en        │
-   │ → feed real HyperCore│    │ AssetOracle.sol (mirror│
+   │ → feed real HyperCore│    │ YPFOracle (mirror     │
    │                       │    │ auditable, HyperCore  │
    │                       │    │ NO lo lee)             │
    └─────────────────────┘    └─────────────────────┘
@@ -156,7 +156,7 @@ npm run hip3:deploy      # Arma (y, con --send, firma) el registerAsset2 del mer
 - Corre cada `PUSH_INTERVAL_MS` (default 30s), solo si `ORACLE_CONTRACT_ADDRESS` y `PUSHER_PRIVATE_KEY` están configurados, con guarda `inFlight` contra ticks solapados (dos `writeContract` en vuelo pedirían el mismo nonce).
 - Toma el precio actual vía `getPrice()` y firma `pushPrice(keccak256(symbol), price * 1e6, timestamp)` en el contrato con `viem`.
 - Publica igual cuando el precio está `frozen` o es `simulated` — es exactamente el valor que sostiene el breaker, y `/market` reporta `simulated: true` junto a él. Solo un precio no finito o `status: 'error'` frena el push.
-- Es un **mirror auditable en HyperEVM**, no el feed que consume HyperCore — ese rol lo cumple el publisher HIP-3 (`hip3/publisher.js`).
+- Es un **mirror auditable en HyperEVM mediante `YPFOracle`**, no el feed que consume HyperCore — ese rol lo cumple el publisher HIP-3 (`hip3/publisher.js`).
 
 ## Publisher HIP-3 (`hip3/publisher.js`)
 
@@ -168,30 +168,34 @@ npm run hip3:deploy      # Arma (y, con --send, firma) el registerAsset2 del mer
 
 ---
 
-## Contrato inteligente (`contracts/src/AssetOracle.sol`)
+## Contrato inteligente (`contracts/src/YPFOracle.sol`)
 
-- Nombre y contrato agnósticos del activo — el piloto ya cambió una vez (GGAL → YPF). `latestPrice()` lee `defaultSymbol`, seteable por el `owner` con `setDefaultSymbol(bytes32)`; `latestPriceFor(bytes32 symbol)` lee cualquier símbolo.
-- Guarda `price` con precisión 1e6 (ej. `42_315_000` = $42.315000) junto al `timestamp`.
-- Solo el `pusher` autorizado puede llamar a `pushPrice(bytes32 symbol, uint256 price, uint64 timestamp)`, que valida `price > 0`, rechaza timestamps futuros más allá de `MAX_FUTURE_SKEW`, y rechaza un timestamp no mayor al último guardado (`StalePrice`).
-- El `owner` puede rotar el pusher con `setPusher(address)` y transferir el ownership en dos pasos (`transferOwnership` + `acceptOwnership`).
+- `YPFOracle` es el contrato push-style propio del proyecto. El constructor recibe el `pusher` inicial y establece `owner = msg.sender`.
+- `latestPrice()` lee el símbolo canónico `YPF`; `latestPriceFor(bytes32 symbol)` permite consultar cualquier símbolo almacenado.
+- `pushPrice(bytes32 symbol, uint256 price, uint64 timestamp)` sólo puede ejecutarlo el pusher autorizado, exige precio positivo y rechaza timestamps futuros.
+- `setPusher(address)` sólo puede ejecutarlo el owner. Las funciones de escritura emiten `PricePushed` y `PusherUpdated`.
+- El precio se almacena con precisión 1e6 junto con un timestamp `uint64`; `isFresh` e `isFreshFor` permiten comprobar frescura relativa al tiempo actual.
+
+El frontend no llama estas funciones ni usa ABI: sólo muestra metadata y, en Infrastructure, verifica bytecode y receipts mediante JSON-RPC read-only.
 
 ---
 
 ## Estado actual
 
-- **Activo piloto**: `YPF` (ADR) / `YPFD` (BYMA), perp `YPF-PERP` en el dex HIP-3 `arg`.
-- **Fuente de precio**: Data912 (ADR + local + CCL de referencia), con fallback a EMA o caminata simulada fuera de horario.
-- **Oráculo**: fetch → normalize (cross-check CCL, sanity de book) → circuit breaker → EMA.
-- **HyperCore**: publisher HIP-3 (`perpDeploy.setOracle`) — deshabilitado por defecto (`HIP3_ENABLED=false`), dry-run por defecto (`HIP3_DRY_RUN=true`).
-- **HyperEVM**: mirror auditable vía `AssetOracle.sol`, deshabilitado hasta configurar `ORACLE_CONTRACT_ADDRESS` + `PUSHER_PRIVATE_KEY`.
-- **Frontend**: consume `/market/YPF-PERP` y `/oracle/price/YPF`.
-- **Tests**: 57 casos (`node --test`) cubriendo config, EMA, circuit breaker, normalizer, oracle end-to-end y HIP-3 (publisher/deployer).
+- **Activo piloto**: `YPF` (ADR) / `YPFD` (BYMA), identidad operativa backend `{ORACLE_SYMBOL}-PERP` en el dex HIP-3 `arg`; la UI frontend presenta el alias `YPF-USDC`.
+- **Fuente de precio**: Data912 (ADR + local + CCL de referencia), con fallback a EMA o caminata simulada fuera de horario según configuración.
+- **Oráculo**: fetch → normalize (cross-check CCL, sanity de book) → circuit breaker → EMA, con último resultado cacheado en memoria.
+- **HyperCore**: publisher HIP-3 (`perpDeploy.setOracle`) — deshabilitado por defecto (`HIP3_ENABLED=false`), dry-run por defecto (`HIP3_DRY_RUN=true`); sin prueba de publicación real en el estado predeterminado.
+- **HyperEVM**: mirror auditable vía `YPFOracle`, deshabilitado hasta configurar `ORACLE_CONTRACT_ADDRESS` + `PUSHER_PRIVATE_KEY`.
+- **Frontend**: consume `/market/YPF-PERP` y `/oracle/price/YPF`; Infrastructure consulta además el RPC read-only configurado para verificar deployments, sin firmar.
+- **Tests**: 58 casos (`node --test` en la validación actual) cubriendo config, EMA, circuit breaker, normalizer, oracle end-to-end y HIP-3 (publisher/deployer).
 
 ## Próximos pasos / TODOs
 
 - [ ] Soportar múltiples símbolos simultáneos en los endpoints (hoy hardcodeado a `ORACLE_SYMBOL`).
-- [x] Renombrar `AssetOracle.sol` (y su ABI) para reflejar que ya no es específico de GGAL.
-- [ ] Reemplazar el funding rate placeholder de `/market` por un cálculo real.
+- [x] Usar `YPFOracle` como nombre del contrato mirror y del ABI sincronizado.
+- [x] Calcular un funding indicativo acotado desde la prima mark/index mientras el mercado está abierto.
+- [ ] Sustituir el funding indicativo por la fuente oficial del venue cuando el backend la exponga.
 - [ ] Métricas/observabilidad (Prometheus u otro) más allá de `/health`.
 - [ ] Deploy del mercado HIP-3 real (`npm run hip3:deploy -- --send`) una vez cubierto el piso de stake.
 - [ ] Rotar `PUSHER_PRIVATE_KEY`/`HIP3_ORACLE_UPDATER_KEY` y separar la key del deployer de la del updater recurrente (ver B2 de la auditoría).
