@@ -1,0 +1,41 @@
+.home-page { padding-top: 5.5rem; }
+.home-hero { display: grid; grid-template-columns: minmax(0, 1fr) 260px; gap: 4rem; align-items: end; padding: 3.5rem 0 5rem; border-bottom: 1px solid var(--line); }
+.home-hero__copy { max-width: 760px; }
+.home-hero .page-title { max-width: 740px; font-size: clamp(2.7rem, 6vw, 5.8rem); }
+.home-hero .page-description { max-width: 630px; font-size: 1rem; }
+.home-hero__actions { display: flex; flex-wrap: wrap; gap: .8rem; margin-top: 2rem; }
+.home-hero__signal { display: grid; gap: .45rem; align-self: end; padding: 1.2rem; border: 1px solid var(--line-strong); border-radius: var(--radius-md); background: linear-gradient(145deg, rgba(63,169,224,.12), rgba(255,255,255,.025)); }
+.home-hero__signal-label, .interface-card__eyebrow { color: var(--celeste-bright); font-family: "IBM Plex Mono", monospace; font-size: .62rem; letter-spacing: .14em; text-transform: uppercase; }
+.home-hero__signal strong { font-size: 1.05rem; }
+.home-hero__signal span:last-child { color: var(--muted); font-size: .72rem; line-height: 1.45; }
+.home-section { padding: 4.75rem 0 2rem; }
+.section-heading { display: flex; justify-content: space-between; align-items: end; gap: 2rem; margin-bottom: 1.6rem; }
+.section-heading .eyebrow { margin-bottom: .45rem; }
+.section-title { margin: 0; font-size: clamp(1.5rem, 3vw, 2.35rem); letter-spacing: -.05em; line-height: 1.1; }
+.section-heading__note { margin: 0; color: var(--muted); font-family: "IBM Plex Mono", monospace; font-size: .67rem; }
+.interface-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+.interface-card { position: relative; min-height: 245px; display: flex; flex-direction: column; justify-content: space-between; gap: 2rem; padding: 1.5rem; overflow: hidden; border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--navy-900); transition: transform 220ms var(--ease-out), border-color 220ms ease, background 220ms ease; }
+.interface-card::after { position: absolute; width: 150px; height: 150px; right: -45px; bottom: -55px; border: 1px solid rgba(63,169,224,.15); border-radius: 50%; content: ""; }
+.interface-card:hover, .interface-card:focus-visible { transform: translateY(-5px); border-color: var(--line-strong); background: var(--navy-850); }
+.interface-card--oracle { background: linear-gradient(145deg, rgba(232,169,60,.08), var(--navy-900) 55%); }
+.interface-card--infra { background: linear-gradient(145deg, rgba(82,211,154,.06), var(--navy-900) 55%); }
+.interface-card__number { color: var(--muted); font-family: "IBM Plex Mono", monospace; font-size: .7rem; }
+.interface-card h3 { margin: .5rem 0 .6rem; font-size: 1.65rem; letter-spacing: -.04em; }
+.interface-card p:not(.interface-card__eyebrow) { max-width: 250px; margin: 0; color: var(--muted); font-size: .79rem; }
+.interface-card__arrow { position: relative; z-index: 1; align-self: end; color: var(--celeste-bright); font-size: 1.2rem; }
+.home-principles { display: grid; grid-template-columns: .8fr 1.2fr; gap: 4rem; margin: 4rem 0 2rem; padding: 2.2rem 0; border-top: 1px solid var(--line); }
+.home-principles .eyebrow { margin-bottom: .45rem; }
+.principle-list { display: grid; gap: .7rem; }
+.principle-list article { display: grid; grid-template-columns: 70px 1fr; gap: 1.2rem; padding: .95rem 0; border-bottom: 1px solid var(--line); }
+.principle-list article:last-child { border-bottom: 0; }
+.principle-list strong { color: var(--celeste-bright); font-family: "IBM Plex Mono", monospace; font-size: .72rem; letter-spacing: .12em; }
+.principle-list span { color: var(--muted); font-size: .78rem; }
+@media (max-width: 780px) {
+  .home-page { padding-top: 2.6rem; }
+  .home-hero { grid-template-columns: 1fr; gap: 2rem; padding-top: 1.4rem; padding-bottom: 3rem; }
+  .home-hero__signal { max-width: 300px; }
+  .section-heading, .home-principles { grid-template-columns: 1fr; display: grid; gap: .8rem; }
+  .interface-grid { grid-template-columns: 1fr; }
+  .interface-card { min-height: 190px; }
+  .home-principles { margin-top: 2.5rem; }
+}

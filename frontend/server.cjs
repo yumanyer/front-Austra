@@ -3,7 +3,15 @@ const fs = require("node:fs");
 const path = require("node:path");
 
 const root = __dirname;
-const indexPath = path.join(root, "index.html");
+const routes = {
+  "/": "index.html",
+  "/markets": "markets/market.html",
+  "/markets/": "markets/market.html",
+  "/oracle": "oracle/oracle.html",
+  "/oracle/": "oracle/oracle.html",
+  "/infra": "infra/infrastructure.html",
+  "/infra/": "infra/infrastructure.html"
+};
 const mime = {
   ".html": "text/html; charset=utf-8",
   ".css": "text/css; charset=utf-8",
@@ -13,13 +21,12 @@ const mime = {
   ".jpg": "image/jpeg",
   ".jpeg": "image/jpeg",
   ".svg": "image/svg+xml",
-  ".ico": "image/x-icon",
+  ".ico": "image/x-icon"
 };
 
 function getFilePath(pathname) {
-  if (pathname === "/" || !path.extname(pathname)) return indexPath;
-
-  const relativePath = pathname.replace(/^\/+/, "");
+  const relativePath = routes[pathname] || pathname.replace(/^\/+/, "");
+  if (!relativePath) return null;
   const candidate = path.resolve(root, relativePath);
   const rootPrefix = `${root}${path.sep}`;
   if (candidate !== root && !candidate.startsWith(rootPrefix)) return null;
@@ -52,12 +59,12 @@ const server = http.createServer((request, response) => {
 
     response.writeHead(200, {
       "Content-Type": mime[path.extname(filePath)] || "application/octet-stream",
-      "Cache-Control": "no-store",
+      "Cache-Control": "no-store"
     });
     response.end(data);
   });
 });
 
 server.listen(4173, "127.0.0.1", () => {
-  console.log("AustralFinance preview on http://127.0.0.1:4173");
+  console.log("AustralFinance frontend preview on http://127.0.0.1:4173");
 });

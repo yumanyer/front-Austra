@@ -1,106 +1,89 @@
 # AustralFinance frontend
 
-Frontend de producto para AustralFinance, construido exclusivamente con **HTML5, CSS3 y JavaScript Vanilla**. La aplicación organiza la experiencia en tres vistas: el mercado perpetuo `YPF-PERP`, el Oracle de precio y la infraestructura de publicación hacia HIP-3 / HyperCore y AssetOracle / HyperEVM.
+Frontend visual de AustralFinance construido exclusivamente con **HTML semántico, CSS organizado y JavaScript Vanilla modular**. Esta etapa se limita a completar la experiencia visual de Markets, Oracle e Infrastructure con datos mock aislados. No hay conexiones con backend, API, blockchain, contratos, RPC, Data912, WDK, wallet ni transacciones.
 
-La versión actual está configurada como **DEMO DATA** para revisión visual. Los precios, estados, métricas y puntos del chart provienen de `js/demo-data.js` y se muestran como `SIMULATED` o `DEMO DATA` dentro de la interfaz. No se ejecutan llamadas a backend, blockchain ni wallet en este modo.
+> **Fase 1:** estructura y comportamiento visual. Los valores mock existen únicamente para que las interfaces puedan revisarse y se eliminan desde un único archivo en la siguiente fase.
 
 ## Ejecutar localmente
 
-El proyecto no usa un framework ni un bundler. Para levantar el preview local con Node.js:
+El proyecto no usa framework ni bundler. Desde esta carpeta se puede levantar el preview estático con Node.js:
 
 ```bash
 node server.cjs
 ```
 
-Luego abrir `http://127.0.0.1:4173/`. Las rutas SPA disponibles son `/`, `/markets`, `/oracle` e `/infrastructure`. El servidor sirve `index.html` para las rutas sin extensión y los assets estáticos desde sus paths reales.
+Luego abrir [http://127.0.0.1:4173/](http://127.0.0.1:4173/). El servidor entrega documentos HTML reales y también ofrece atajos sin extensión:
 
-## Arquitectura actual
+| Interfaz | Documento HTML | Atajo |
+| --- | --- | --- |
+| Inicio | `index.html` | `/` |
+| Markets | `markets/market.html` | `/markets` |
+| Oracle | `oracle/oracle.html` | `/oracle` |
+| Infrastructure | `infra/infrastructure.html` | `/infra` |
 
-La SPA tiene una única fuente de verdad para navegación, datos y renderizado. El servidor de preview sólo entrega archivos y resuelve el fallback de rutas; no contiene lógica de producto.
+La navegación utiliza enlaces HTML normales. No existe router SPA ni fallback que reemplace una página completa desde JavaScript.
+
+## Arquitectura frontend
+
+Cada interfaz contiene su propia estructura semántica: encabezado, navegación, contenido principal, secciones, artículos, enlaces y pie de página. Los módulos JavaScript sólo enlazan eventos y actualizan valores o atributos de nodos que ya existen en el HTML.
 
 | Área | Ubicación | Responsabilidad |
 | --- | --- | --- |
-| Entrada | `index.html` | Shell HTML, configuración runtime y carga de `js/app.js`. |
-| Orquestación | `js/app.js` | Routing SPA, layout global, navegación y eventos de shell. |
-| Estado | `js/state.js` | Snapshot, estado de carga, ruta actual y suscripciones. |
-| Datos | `js/api.js` | Requests HTTP, timeouts y normalización de contratos externos. |
-| Fixture | `js/demo-data.js` | Snapshot explícito para revisión visual sin requests. |
-| Componentes | `js/components/` | Primitivas compartidas de UI y gráfico. |
-| Vistas | `js/views/` | Renderizadores de Market, Oracle e Infrastructure. |
-| Integraciones | `js/integrations/` | Errores y estados compartidos para adaptadores aún no configurados. |
-| Wallet | `js/wallet/` | Punto reservado para el adaptador de wallet y sus eventos; no se conecta en esta versión. |
-| Blockchain | `js/blockchain/` | Punto reservado para lectura on-chain y envío de transacciones; permanece inerte. |
-| Estilos | `css/styles.css` | Sistema visual y responsive de la SPA. |
-| Preview | `server.cjs` | Servidor estático local con fallback SPA y protección de paths. |
+| Inicio | `index.html` | Presentación del preview y enlaces a las tres interfaces. |
+| Markets | `markets/market.html` + `markets/market.js` | Estructura del mercado, gráfico y métricas visuales. |
+| Oracle | `oracle/oracle.html` + `oracle/oracle.js` | Pipeline, métricas y circuito de protección visual. |
+| Infrastructure | `infra/infrastructure.html` + `infra/infrastructure.js` | Diagrama, flujo y tarjetas de componentes. |
+| Estilos compartidos | `css/styles.css` | Tokens, componentes, layout y breakpoints responsive. |
+| Estilos de inicio | `home/home.css` | Hero, tarjetas de interfaces y principios visuales. |
+| Comportamiento común | `js/app.js` | Menú móvil y marcado de navegación activa. |
+| Mock data | `js/mock-data.js` | Única fuente de valores visuales temporales. |
+| Utilidades | `js/page-data.js`, `js/utils.js` | Formateo y actualización de nodos existentes. |
+| Gráfico | `js/components/chart.js` | Actualiza el SVG estático del gráfico sin generar una página. |
+| Preview | `server.cjs` | Servidor estático local con rutas explícitas y protección de paths. |
 
-Los antiguos árboles de páginas independientes y utilidades duplicadas fueron retirados porque no tenían consumidores activos y mantenían contratos incompatibles con la SPA. Las dependencias instaladas tampoco se versionan: `frontend/node_modules/` se reconstruye a partir de `package-lock.json` y está excluido por `.gitignore`.
+La regla de separación es deliberada: **HTML = estructura**, **CSS = presentación**, **JavaScript = interacción** y **`mock-data.js` = valores temporales**. En esta fase no se agregan contratos de datos externos ni funciones de integración.
 
-## Configurar el backend cuando exista
+## Datos mock
 
-La URL base se configura antes de cargar `js/app.js` mediante `window.AUSTRAL_CONFIG` en `index.html`:
-
-```html
-<script>
-  window.AUSTRAL_CONFIG = {
-    API_URL: "https://api.example.com",
-    USE_DEMO_DATA: false
-  };
-</script>
-```
-
-Con `USE_DEMO_DATA: true`, el cliente no realiza requests y usa el fixture explícito. Con la bandera en `false`, `js/state.js` delega en `loadSnapshot()` de `js/api.js`, que consulta y normaliza:
-
-```text
-GET /health
-GET /oracle/price/YPF
-GET /market/YPF-PERP
-```
-
-Los componentes no hacen `fetch()` directamente. Si un endpoint falla, el snapshot conserva el estado de error y la UI muestra `Oracle unavailable`, `Market data unavailable` o `Backend unavailable` sin inventar métricas.
-
-## Puntos de integración futuros
-
-La interfaz ya separa la fuente de datos de la presentación. El backend se integrará detrás de `js/api.js`; la información de blockchain podrá agregarse como un recurso normalizado dentro del snapshot sin modificar las vistas; y el wallet deberá entrar únicamente a través de `js/wallet/`, actualizando estado mediante eventos antes de habilitar acciones de usuario. En esta etapa esos puntos se mantienen inertes: no hay conexión, firma, envío de transacciones, ABI ni contrato implementado.
+Todo valor visual temporal vive en `js/mock-data.js`, exportado como `MOCK_SNAPSHOT`. Las páginas importan ese fixture a través de `loadMockSnapshot()` y no realizan solicitudes de red. Para eliminar los datos en la siguiente fase basta con reemplazar ese límite por la fuente acordada, sin reconstruir la estructura de las interfaces.
 
 ## Verificación
 
-La prueba de normalización se ejecuta con:
+La prueba frontend-only valida la existencia de documentos reales, navegación modular, datos mock y ausencia de patrones de integración o renderizado SPA:
 
 ```bash
 npm test
 ```
 
-Los módulos JavaScript propios se pueden validar con:
+También se pueden validar sintácticamente los módulos propios y el servidor:
 
 ```bash
 find js -type f -name '*.js' -print0 | xargs -0 -n1 node --check
 node --check server.cjs
 ```
 
-El flujo de verificación del preview debe cubrir las cuatro rutas SPA y confirmar que los assets existentes responden con `200`, mientras que los assets inexistentes responden con `404`.
-
 ## Estructura
 
 ```text
 index.html
+home/home.css
+markets/market.html
+markets/market.js
+oracle/oracle.html
+oracle/oracle.js
+infra/infrastructure.html
+infra/infrastructure.js
 css/styles.css
 js/app.js
-js/api.js
-js/state.js
-js/demo-data.js
+js/mock-data.js
+js/page-data.js
 js/utils.js
-js/components/common.js
 js/components/chart.js
-js/views/market.js
-js/views/oracle.js
-js/views/infrastructure.js
-js/integrations/unavailable.js
-js/wallet/connector.js
-js/wallet/events.js
-js/blockchain/client.js
-logo.png
 server.cjs
 package.json
 package-lock.json
 tests/smoke.mjs
+logo.png
 ```
+
+Los directorios `backend/` y `contracts/`, si existen en el repositorio, quedan fuera del alcance de esta etapa y no se modifican.

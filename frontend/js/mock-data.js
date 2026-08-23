@@ -1,57 +1,20 @@
-// Explicit fixture for visual review only. Never presented as live data.
-export const DEMO_SNAPSHOT = {
-  mode: "simulated",
-  health: {
-    status: "success",
-    error: null,
-    data: { status: "CONNECTED", version: "demo-v1" },
-  },
-  oracle: {
-    status: "success",
-    error: null,
-    data: {
-      price: 42.315,
-      ema: 42.301,
-      lastPrint: 42.32,
-      bid: 42.3,
-      ask: 42.34,
-      spread: 0.04,
-      ccl: 1180,
-      impliedCcl: 1181.2,
-      crossCheck: "PASS",
-      status: "VALID",
-      source: "Data912",
-      marketOpen: true,
-      freshness: "3s ago",
-      circuitBreaker: {
-        status: "CLEAR",
-        threshold: 10,
-        deviation: 1.8,
-        releaseTicks: "3 / 3",
-      },
-      raw: {
-        data912Status: "CONNECTED",
-        normalizerStatus: "VALID",
-        normalizationDetail: "Book normalized",
-        sourceStatus: "CONNECTED",
-      },
-    },
-  },
+export const MOCK_SNAPSHOT = {
+  mode: "mock",
+  fetchedAt: "2026-08-23T03:40:00Z",
+  health: { status: "READY", data: { status: "READY", version: "frontend-preview" } },
   market: {
     status: "success",
-    error: null,
     data: {
       markPrice: 42.32,
       indexPrice: 42.315,
       fundingRate: 0.01,
       maxLeverage: 5,
       marketStatus: "LIVE",
-      hip3Status: "ACTIVE",
-      pusherStatus: "CONNECTED",
+      change24h: 1.24,
       volume24h: 1240000,
       openInterest: 428000,
-      change24h: 1.24,
       raw: {
+        hip3Status: "ACTIVE",
         hyperCoreStatus: "ACTIVE",
         hyperEvmStatus: "ACTIVE",
         history: [
@@ -78,10 +41,29 @@ export const DEMO_SNAPSHOT = {
           { timestamp: "2026-08-23T00:20:00Z", price: 42.29, ema: 42.33 },
           { timestamp: "2026-08-23T00:30:00Z", price: 42.34, ema: 42.33 },
           { timestamp: "2026-08-23T00:40:00Z", price: 42.31, ema: 42.32 },
-          { timestamp: "2026-08-23T00:50:00Z", price: 42.315, ema: 42.301 },
-        ],
-      },
-    },
+          { timestamp: "2026-08-23T00:50:00Z", price: 42.315, ema: 42.301 }
+        ]
+      }
+    }
   },
-  fetchedAt: "2026-08-23T03:40:00Z",
+  oracle: {
+    status: "success",
+    data: {
+      price: 42.315,
+      ema: 42.301,
+      lastPrint: 42.32,
+      bid: 42.3,
+      ask: 42.34,
+      spread: 0.04,
+      ccl: 1180,
+      impliedCcl: 1181.2,
+      crossCheck: "PASS",
+      status: "VALID",
+      source: "Mock market feed",
+      marketOpen: true,
+      freshness: "3s ago",
+      circuitBreaker: { status: "CLEAR", threshold: 10, deviation: 1.8, releaseTicks: "3 / 3" },
+      raw: { sourceStatus: "READY", normalizerStatus: "VALID", normalizationDetail: "Book normalized" }
+    }
+  }
 };
