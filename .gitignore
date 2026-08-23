@@ -1,0 +1,17 @@
+# Dependencies
+frontend/node_modules/
+
+# Local environment
+frontend/.env
+frontend/.env.*
+!frontend/.env.example
+
+# OS and editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Logs and temporary output
+*.log
+coverage/
