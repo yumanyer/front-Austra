@@ -1,5 +1,8 @@
 import assert from "node:assert/strict";
+import { getBlockchainAdapter } from "../js/blockchain/client.js";
 import { loadSnapshot, normalizeMarket, normalizeOracle } from "../js/api.js";
+import { bindWalletEvents } from "../js/wallet/events.js";
+import { connectWallet, getWalletAdapter } from "../js/wallet/connector.js";
 
 const oracle = normalizeOracle({
   price: 42.315,
@@ -65,4 +68,13 @@ assert.equal(snapshot.oracle.data.price, 42.5);
 assert.equal(snapshot.market.data.markPrice, 42.5);
 assert.ok(snapshot.fetchedAt);
 
-console.log("AustralFinance API normalization and snapshot smoke test passed");
+assert.equal(getWalletAdapter().status, "NOT_CONFIGURED");
+await assert.rejects(connectWallet(), (error) => error.code === "NOT_CONFIGURED");
+const walletCleanup = bindWalletEvents(getWalletAdapter());
+assert.equal(typeof walletCleanup, "function");
+walletCleanup();
+
+assert.equal(getBlockchainAdapter().status, "NOT_CONFIGURED");
+await assert.rejects(getBlockchainAdapter().getNetwork(), (error) => error.code === "NOT_CONFIGURED");
+
+console.log("AustralFinance API and integration boundary smoke test passed");

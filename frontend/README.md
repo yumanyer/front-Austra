@@ -27,7 +27,9 @@ La SPA tiene una única fuente de verdad para navegación, datos y renderizado. 
 | Fixture | `js/demo-data.js` | Snapshot explícito para revisión visual sin requests. |
 | Componentes | `js/components/` | Primitivas compartidas de UI y gráfico. |
 | Vistas | `js/views/` | Renderizadores de Market, Oracle e Infrastructure. |
-| Wallet | `js/wallet/` | Punto reservado para el adaptador de wallet; no se conecta en esta versión. |
+| Integraciones | `js/integrations/` | Errores y estados compartidos para adaptadores aún no configurados. |
+| Wallet | `js/wallet/` | Punto reservado para el adaptador de wallet y sus eventos; no se conecta en esta versión. |
+| Blockchain | `js/blockchain/` | Punto reservado para lectura on-chain y envío de transacciones; permanece inerte. |
 | Estilos | `css/styles.css` | Sistema visual y responsive de la SPA. |
 | Preview | `server.cjs` | Servidor estático local con fallback SPA y protección de paths. |
 
@@ -92,8 +94,10 @@ js/components/chart.js
 js/views/market.js
 js/views/oracle.js
 js/views/infrastructure.js
+js/integrations/unavailable.js
 js/wallet/connector.js
 js/wallet/events.js
+js/blockchain/client.js
 logo.png
 server.cjs
 package.json

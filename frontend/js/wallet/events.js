@@ -1,15 +1,15 @@
-export function bindWalletEvents(walletClient, callbacks = {}) {
-  if (walletClient.on) {
-    walletClient.on("accountsChanged", (accounts) => {
-      if (callbacks.onAccountChange) callbacks.onAccountChange(accounts[0]);
-    });
+export function bindWalletEvents(walletAdapter, callbacks = {}) {
+  if (!walletAdapter || walletAdapter.status === "NOT_CONFIGURED") return () => {};
 
-    walletClient.on("chainChanged", (chainId) => {
-      if (callbacks.onChainChange) callbacks.onChainChange(chainId);
-    });
+  const cleanups = [];
+  if (typeof walletAdapter.on === "function") {
+    const handleAccountsChanged = (accounts) => callbacks.onAccountChange?.(accounts?.[0]);
+    const handleChainChanged = (chainId) => callbacks.onChainChange?.(chainId);
+    walletAdapter.on("accountsChanged", handleAccountsChanged);
+    walletAdapter.on("chainChanged", handleChainChanged);
+    cleanups.push(() => walletAdapter.off?.("accountsChanged", handleAccountsChanged));
+    cleanups.push(() => walletAdapter.off?.("chainChanged", handleChainChanged));
   }
 
-  walletClient.getBalance({ chainId: 1 }).then((balance) => {
-    if (callbacks.onInitialBalance) callbacks.onInitialBalance(balance);
-  });
+  return () => cleanups.forEach((cleanup) => cleanup());
 }

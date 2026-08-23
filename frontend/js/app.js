@@ -3,6 +3,7 @@ import { renderInfrastructure } from "./views/infrastructure.js";
 import { renderMarket, enhanceMarket } from "./views/market.js";
 import { renderOracle } from "./views/oracle.js";
 import { createAppState } from "./state.js";
+import { connectWallet } from "./wallet/connector.js";
 import { modeBadge, readableStatus, statusBadge } from "./utils.js";
 
 const root = document.querySelector("#app");
@@ -67,6 +68,19 @@ function showToast(message) {
   showToast.timer = window.setTimeout(() => toast.classList.remove("is-visible"), 2600);
 }
 
+async function handleWalletClick() {
+  try {
+    await connectWallet();
+    showToast("Wallet connected.");
+  } catch (error) {
+    if (error?.code === "NOT_CONFIGURED") {
+      showToast("Wallet integration coming soon. No connection was attempted.");
+      return;
+    }
+    showToast("Wallet unavailable. No connection was attempted.");
+  }
+}
+
 function bindShellEvents() {
   document.querySelectorAll("[data-route]").forEach((link) => {
     link.addEventListener("click", (event) => {
@@ -78,7 +92,7 @@ function bindShellEvents() {
   });
 
   document.querySelectorAll("[data-wallet]").forEach((button) => {
-    button.addEventListener("click", () => showToast("Wallet integration coming soon. No connection was attempted."));
+    button.addEventListener("click", handleWalletClick);
   });
 
   const menuButton = document.querySelector("[data-menu]");
