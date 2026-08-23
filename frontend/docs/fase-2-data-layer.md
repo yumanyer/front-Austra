@@ -1,12 +1,12 @@
 # Fase 2 — Data Layer del frontend
 
-> **Estado del documento:** implementación de la Data Layer y registro de validación end-to-end. El backend local fue auditado; Health responde correctamente y Oracle/Market conservan sus errores HTTP cuando Data912 no está disponible.
+> **Estado del documento:** implementación de la Data Layer y registro de validación end-to-end. El backend local fue auditado; Health, Oracle y Market respondieron correctamente con el contrato disponible.
 
 ## 1. Propósito y alcance
 
-La Fase 2 tiene como objetivo preparar el frontend de AustralFinance para consumir el backend real mediante una capa de datos desacoplada. La interfaz visual ya fue reorganizada y aprobada en el commit [`9f192c6f`](https://github.com/yumanyer/front-Austra/commit/9f192c6f), identificado como `UUXX`. El alcance de este documento es establecer el estado real de esa base, describir las piezas que ya existen, registrar las brechas frente a la especificación vigente y dejar definido el diseño técnico que deberá implementarse en una fase de código posterior.
+La Fase 2 prepara el frontend de AustralFinance para consumir el backend real mediante una capa de datos desacoplada. La interfaz visual fue reorganizada y aprobada en el commit [`9f192c6f`](https://github.com/yumanyer/front-Austra/commit/9f192c6f), identificado como `UUXX`; la implementación de la Data Layer se completó posteriormente y se valida en este documento.
 
-En esta implementación se modificó únicamente el frontend dentro del alcance de la Data Layer. No se tocaron HTML visual, CSS, layout, tipografías, colores, espaciados, responsive, iconos, backend, contratos, blockchain o wallet. El código queda preparado para realizar requests contra `/health`, `/oracle/price/YPF` y `/market/YPF-PERP` cuando `USE_DEMO_DATA` sea `false`.
+En esta implementación se modificó únicamente el frontend dentro del alcance de la Data Layer. Los cambios HTML/CSS se limitan a representar como unavailable los campos sin fuente real y a deshabilitar períodos históricos no soportados; no se alteraron branding, layout, tipografías, colores, responsive, navegación, backend, contratos, blockchain o wallet. El código realiza requests contra `/health`, `/oracle/price/YPF` y `/market/YPF-PERP` cuando `USE_DEMO_DATA` es `false`.
 
 La especificación de referencia vigente es `pasted_content_5.txt`, con `pasted_content_4.txt` como contexto inmediato de implementación. El estado observado incluye el backend local sincronizado y el frontend sobre el que se aplicó la Data Layer.
 
@@ -216,19 +216,19 @@ El campo visual `status` puede conservarse cuando el backend lo entregue explíc
 
 ## 8. Unidades y presentación
 
-La diferencia entre los valores demo y backend requiere una política explícita. La especificación señala como ejemplo que `thresholdPct` podría llegar como `0.1` desde backend, mientras que el fixture utiliza `10`. Esa diferencia no debe resolverse por intuición.
+La diferencia entre los valores demo y backend requiere una política explícita. El backend real entrega `thresholdPct` como `0.1`, que representa una fracción equivalente a 10%; la interfaz aplica una conversión explícita sólo al formatear el valor como `10.00%`. El fixture demo utiliza la misma unidad ratio.
 
-La futura implementación debe registrar por campo la unidad esperada, la unidad recibida y cualquier transformación aplicada. En particular, debe confirmarse el significado de:
+La implementación registra por campo la unidad esperada, la unidad recibida y la transformación aplicada sólo cuando corresponde a presentación. El contrato confirmado establece:
 
 | Campo | Pregunta que debe resolver el contrato |
 |---|---|
-| `thresholdPct` | ¿`0.1` representa 0.1% o una fracción equivalente a 10%? |
-| `deviation` | ¿Es porcentaje, puntos porcentuales o ratio? |
-| `pctChange` | ¿Llega como `1.24` para 1.24% o como `0.0124`? |
-| `fundingRate` | ¿Es porcentaje de presentación o ratio financiero? |
-| `spread` / `spreadPct` | ¿Es diferencia absoluta de precio o porcentaje? |
+| `thresholdPct` | `0.1` como ratio equivalente a 10%; se multiplica por 100 sólo en presentación |
+| `deviation` | Ratio; se multiplica por 100 sólo en presentación |
+| `pctChange` | Porcentaje directo, por ejemplo `0.65` para `0.65%` |
+| `fundingRate` | Ratio financiero; se multiplica por 100 sólo en presentación |
+| `spread` / `spreadPct` | `spread` es diferencia absoluta; `spreadPct` es ratio |
 
-Hasta que esas unidades estén confirmadas, la data layer no debe aplicar conversiones arbitrarias. La normalización y la presentación pueden tener responsabilidades separadas, pero la conversión debe ser única, explícita y testeada.
+Con esas unidades confirmadas, la Data Layer conserva los valores de origen y aplica la conversión sólo en la presentación. La normalización y la presentación mantienen responsabilidades separadas, y las conversiones son únicas, explícitas y testeadas.
 
 ## 9. Modelo normalizado de Health
 
@@ -400,7 +400,7 @@ El smoke test actual cubre la normalización y el comportamiento de la Data Laye
 | Freshness | Selección de `timestamp` o `lastPrintAt`, cálculo seguro de `relativeTime` |
 | Breaker | `frozen`, precio congelado, motivo, timestamp, ticks, valores ausentes y status no inventado |
 | CCL | `reportedCcl`, `impliedCcl`, `cclSampled`, `cclDeviation`, alias `ccl` sólo con política explícita |
-| Unidades | `thresholdPct`, `deviation`, `pctChange`, `fundingRate`, `spread` y `spreadPct` sin conversiones implícitas |
+| Unidades | Ratios y porcentajes conservados en el modelo; conversiones explícitas sólo para presentación |
 | Ausencias | Payload parcial sin history, volume, OI, HyperCore, HyperEVM o subobjetos operativos |
 | Demo/real | Demo sin requests; modo real sin fallback silencioso a fixture |
 
@@ -426,7 +426,7 @@ La siguiente lista registra el estado de la implementación actual. El contrato 
 | CCL tratado explícitamente | **Implementado; `ccl` no se deriva de `reportedCcl`** |
 | Campos inexistentes no se rellenan con demo | **Implementado en normalizadores y cubierto por tests** |
 | Demo mode funciona | **Cumplido en la base actual** |
-| Real mode queda preparado | **Implementado y probado contra backend local; Oracle/Market devuelven error HTTP sin fallback demo** |
+| Real mode queda preparado | **Implementado y probado contra backend local; Oracle/Market muestran datos reales o unavailable sin fallback demo** |
 | Market consume modelo normalizado | **Implementado; no accede a `raw`** |
 | Oracle consume modelo normalizado | **Implementado; no accede a `raw`** |
 | Infrastructure consume datos disponibles | **Implementado desde Health, Oracle y Market normalizados** |
@@ -439,13 +439,13 @@ La siguiente lista registra el estado de la implementación actual. El contrato 
 | No se implementa deployment | **Regla vigente** |
 
 ## 17. Validación contra el backend real
-La implementación se ejecutó sobre la copia local completa y el backend fue utilizado como fuente de verdad. Se confirmaron las rutas parametrizadas `GET /health`, `GET /oracle/price/:symbol` y `GET /market/:symbol`, sus parámetros `YPF` y `YPF-PERP`, timestamps Unix en segundos, los modelos Oracle/Market y los subobjetos Health. En runtime, `/health` respondió `200`; `/oracle/price/YPF` y `/market/YPF-PERP` respondieron `503 Oracle not ready yet` porque las llamadas externas a Data912 fallaron en este entorno. El frontend clasifica esos `503` como `http`, conserva el snapshot parcial y no usa demo como fallback.
+La implementación se ejecutó sobre la copia local completa y el backend fue utilizado como fuente de verdad. Se confirmaron las rutas parametrizadas `GET /health`, `GET /oracle/price/:symbol` y `GET /market/:symbol`, sus parámetros `YPF` y `YPF-PERP`, timestamps Unix en segundos, los modelos Oracle/Market y los subobjetos Health. En runtime, `/health`, `/oracle/price/YPF` y `/market/YPF-PERP` respondieron `200` con el backend local. Oracle entregó precio real con `source: "ema_fallback"` y Market entregó `markPrice`, `indexPrice`, `fundingRate: 0`, `maxLeverage` y estado `offline`. El frontend conserva los campos sin fuente como unavailable y no usa demo como fallback.
 
 La revisión final del diff confirmó que los cambios visuales se limitan a representar datos no disponibles: em dash, estado de chart unavailable y controles de período deshabilitados. No se alteraron branding, layout, tipografías, colores ni navegación. Blockchain, wallet, contratos, ABI, RPC, Web3, HyperEVM, HyperCore, VPS, Nginx, dominio, HTTPS y deployment permanecen fuera de esta fase.
 
 ## 18. Registro de esta entrega
 
-Esta implementación modifica únicamente archivos del frontend dentro del alcance de la Data Layer: configuración, endpoints, cliente HTTP, normalización, estado, utilidad temporal, controladores de página, tests y documentación. No se modificaron backend, contracts, blockchain ni wallet. El modo demo sigue sin requests; el modo real fue probado contra el backend local y conserva correctamente los errores HTTP de Oracle/Market provocados por la dependencia externa Data912.
+Esta implementación modifica únicamente archivos del frontend dentro del alcance de la Data Layer: configuración, endpoints, cliente HTTP, normalización, estado, utilidad temporal, controladores de página, componentes de representación, tests y documentación. No se modificaron backend, contracts, blockchain ni wallet. El modo demo no ejecuta requests y no agrega datos ficticios de volumen, Open Interest o histórico; el modo real fue probado contra el backend local con respuestas 200 y muestra sólo los campos entregados.
 
 ## Referencias
 
