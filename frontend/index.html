@@ -3,34 +3,28 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="description" content="AustralFinance frontend preview for perpetual markets, oracle visibility and protocol infrastructure." />
+    <meta name="description" content="AustralFinance demo interface: perpetual markets, oracle infrastructure and auditable price delivery for Argentine assets." />
     <meta name="theme-color" content="#0E1B2A" />
-    <title>AustralFinance — Frontend Preview</title>
+    <title>AustralFinance — Demo data</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="/css/root.css" />
-    <link rel="stylesheet" href="/css/media.css" />
-    <link rel="stylesheet" href="/home/home.css" />
-    <link rel="icon" type="image/png" href="/logo.png" />
+    <link rel="stylesheet" href="css/styles.css" />
+    <link rel="icon" type="image/png" href="logo.png" />
   </head>
   <body>
     <a class="skip-link" href="#main-content">Skip to main content</a>
-    <div class="app-shell">
-      <header class="site-header"><div class="header-inner"><a class="brand" href="/" aria-label="AustralFinance home"><img class="brand-mark" src="/logo.png" alt="" width="34" height="34" /><span class="brand-wordmark">austral<strong>finance</strong><span class="brand-dot">.fi</span></span></a><nav class="primary-nav" aria-label="Primary navigation"><a class="nav-link" href="/markets/market.html">Markets</a><a class="nav-link" href="/oracle/oracle.html">Oracle</a><a class="nav-link" href="/infra/infrastructure.html">Infrastructure</a></nav><button class="menu-button" type="button" data-menu aria-label="Open navigation" aria-expanded="false"><span></span><span></span><span></span></button></div><nav class="mobile-nav" data-mobile-nav aria-label="Mobile navigation"><a class="nav-link" href="/markets/market.html">Markets</a><a class="nav-link" href="/oracle/oracle.html">Oracle</a><a class="nav-link" href="/infra/infrastructure.html">Infrastructure</a></nav></header>
-      <div class="sync-strip"><span class="sync-strip__label">System</span><span class="status-badge status-badge--warning"><span class="status-dot" aria-hidden="true"></span>MOCK DATA</span><span class="sync-strip__note">Frontend preview · no integrations connected</span></div>
-
-      <main class="app-main" id="main-content">
-        <div class="page container home-page">
-          <section class="home-hero" aria-labelledby="home-title"><div class="home-hero__copy"><p class="eyebrow">AUSTRAL.FI / FRONTEND PREVIEW</p><h1 class="page-title" id="home-title">A clear surface for <span class="page-title__accent">Argentine markets.</span></h1><p class="page-description">Explore the visual system for perpetual markets, transparent pricing and the infrastructure that connects them. Every page is real HTML, with mock values isolated for this frontend-only phase.</p><div class="home-hero__actions"><a class="button button--primary" href="/markets/market.html">Open Markets <span aria-hidden="true">→</span></a><a class="button button--quiet" href="/oracle/oracle.html">Inspect Oracle <span aria-hidden="true">↗</span></a></div></div><aside class="home-hero__signal" aria-label="Preview status"><span class="home-hero__signal-label">PHASE 01</span><strong>Visual system</strong><span>Static interfaces · responsive layout · mock data</span></aside></section>
-
-          <section class="home-section" aria-labelledby="interfaces-title"><div class="section-heading"><div><p class="eyebrow">INTERFACES</p><h2 class="section-title" id="interfaces-title">Three views, one visual language.</h2></div><p class="section-heading__note">Choose a surface to continue.</p></div><div class="interface-grid"><a class="interface-card interface-card--market" href="/markets/market.html"><div class="interface-card__number">01</div><div><p class="interface-card__eyebrow">MARKET / PERPETUALS</p><h3>Market</h3><p>Price, chart, metrics and the YPF-PERP market surface.</p></div><span class="interface-card__arrow" aria-hidden="true">→</span></a><a class="interface-card interface-card--oracle" href="/oracle/oracle.html"><div class="interface-card__number">02</div><div><p class="interface-card__eyebrow">ORACLE / PRICE ENGINE</p><h3>Oracle</h3><p>Price health, validation stages and circuit-breaker visibility.</p></div><span class="interface-card__arrow" aria-hidden="true">→</span></a><a class="interface-card interface-card--infra" href="/infra/infrastructure.html"><div class="interface-card__number">03</div><div><p class="interface-card__eyebrow">INFRASTRUCTURE / DATA FLOW</p><h3>Infrastructure</h3><p>Architecture map, delivery paths and component status.</p></div><span class="interface-card__arrow" aria-hidden="true">→</span></a></div></section>
-
-          <section class="home-principles" aria-labelledby="principles-title"><div><p class="eyebrow">FRONTEND PRINCIPLES</p><h2 class="section-title" id="principles-title">Structure first. Behavior second.</h2></div><div class="principle-list"><article><strong>HTML</strong><span>Semantic content and page structure live in each document.</span></article><article><strong>CSS</strong><span>Shared tokens and responsive layout stay in organized stylesheets.</span></article><article><strong>JS</strong><span>Small modules handle interactions and update existing nodes.</span></article></div></section>
-        </div>
+    <div id="app"></div>
+    <noscript>
+      <main class="noscript-message">
+        <p class="eyebrow">AUSTRAL.FI / SYSTEM</p>
+        <h1>JavaScript is required to view AustralFinance.</h1>
+        <p>Enable JavaScript to inspect the Market, Oracle and Infrastructure interfaces.</p>
       </main>
-      <footer class="site-footer"><div class="container footer-inner"><p class="footer-copy"><strong>AustralFinance</strong> · frontend-only preview with isolated mock data.</p><nav class="footer-links" aria-label="Footer navigation"><a href="/markets/market.html">Markets</a><a href="/oracle/oracle.html">Oracle</a><a href="/infra/infrastructure.html">Infrastructure</a></nav></div></footer>
-    </div>
-    <script type="module" src="/js/app.js"></script>
+    </noscript>
+    <script>
+      window.AUSTRAL_CONFIG = window.AUSTRAL_CONFIG || { API_URL: "", USE_DEMO_DATA: true };
+    </script>
+    <script type="module" src="js/app.js"></script>
   </body>
 </html>

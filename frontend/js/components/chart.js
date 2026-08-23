@@ -1,10 +1,16 @@
+import { escapeHTML, formatPrice, isAvailable } from "../utils.js";
+import { icon } from "./common.js";
+
 function normalizePoints(points) {
   if (!Array.isArray(points)) return [];
-  return points.map((point, index) => ({
-    price: Number(typeof point === "number" ? point : point?.price ?? point?.value ?? point?.indexPrice),
-    ema: typeof point === "object" && point !== null && Number.isFinite(Number(point.ema)) ? Number(point.ema) : null,
-    label: typeof point === "object" && point?.timestamp ? new Date(point.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : String(index + 1),
-  })).filter((point) => Number.isFinite(point.price));
+  return points.map((point, index) => {
+    if (typeof point === "number") return { price: point, ema: null, label: String(index + 1) };
+    return {
+      price: Number(point?.price ?? point?.value ?? point?.indexPrice),
+      ema: isAvailable(point?.ema) ? Number(point.ema) : null,
+      label: point?.timestamp ? new Date(point.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : String(index + 1),
+    };
+  }).filter((point) => Number.isFinite(point.price));
 }
 
 function linePath(points, key, width, height, padding, min, max) {
@@ -17,13 +23,13 @@ function linePath(points, key, width, height, padding, min, max) {
   }).join(" ");
 }
 
-export function updatePriceChart(svg, emptyState, points = []) {
-  if (!svg || !emptyState) return;
+export function renderPriceChart({ points = [] } = {}) {
   const normalized = normalizePoints(points);
   if (normalized.length < 2) {
-    svg.hidden = true;
-    emptyState.hidden = false;
-    return;
+    return `<div class="chart-empty" role="status">
+      <div class="chart-empty__icon">${icon("chart")}</div>
+      <p>Historical data unavailable. The chart is ready for a real Price / EMA series.</p>
+    </div>`;
   }
 
   const width = 920;
@@ -39,43 +45,23 @@ export function updatePriceChart(svg, emptyState, points = []) {
   const emaPoints = normalized.filter((point) => Number.isFinite(point.ema));
   const emaPath = emaPoints.length > 1 ? linePath(emaPoints, "ema", width, height, padding, chartMin, chartMax) : "";
   const areaPath = `${pricePath} L ${width - padding.right} ${height - padding.bottom} L ${padding.left} ${height - padding.bottom} Z`;
-  const gridLines = svg.querySelectorAll("[data-grid-line]");
-  const yLabels = svg.querySelectorAll("[data-y-label]");
-  const xLabels = svg.querySelectorAll("[data-x-label]");
-
-  gridLines.forEach((line, index) => {
-    const y = padding.top + (index / 4) * (height - padding.top - padding.bottom);
-    line.setAttribute("x1", padding.left);
-    line.setAttribute("y1", y);
-    line.setAttribute("x2", width - padding.right);
-    line.setAttribute("y2", y);
-  });
-  yLabels.forEach((label, index) => {
-    const y = padding.top + (index / 4) * (height - padding.top - padding.bottom);
-    const value = chartMax - (index / 4) * (chartMax - chartMin);
-    label.setAttribute("x", width - padding.right + 10);
-    label.setAttribute("y", y + 4);
-    label.textContent = `$${value.toFixed(2)}`;
-  });
+  const grid = [0, 1, 2, 3, 4].map((step) => {
+    const y = padding.top + (step / 4) * (height - padding.top - padding.bottom);
+    const value = chartMax - (step / 4) * (chartMax - chartMin);
+    return `<line class="chart-gridline" x1="${padding.left}" y1="${y}" x2="${width - padding.right}" y2="${y}" /><text class="chart-axis-label" x="${width - padding.right + 10}" y="${y + 4}">${escapeHTML(formatPrice(value))}</text>`;
+  }).join("");
   const labelIndexes = [0, Math.floor((normalized.length - 1) / 2), normalized.length - 1];
-  xLabels.forEach((label, index) => {
-    const pointIndex = labelIndexes[index];
-    const x = padding.left + (pointIndex / Math.max(normalized.length - 1, 1)) * (width - padding.left - padding.right);
-    label.setAttribute("x", x);
-    label.setAttribute("y", height - 9);
-    label.textContent = normalized[pointIndex].label;
-  });
+  const labels = [...new Set(labelIndexes)].map((index) => {
+    const x = padding.left + (index / Math.max(normalized.length - 1, 1)) * (width - padding.left - padding.right);
+    return `<text class="chart-axis-label" x="${x}" y="${height - 9}" text-anchor="middle">${escapeHTML(normalized[index].label)}</text>`;
+  }).join("");
 
-  svg.querySelector("[data-chart-area]")?.setAttribute("d", areaPath);
-  svg.querySelector("[data-chart-price]")?.setAttribute("d", pricePath);
-  const emaElement = svg.querySelector("[data-chart-ema]");
-  if (emaElement) {
-    emaElement.hidden = !emaPath;
-    emaElement.toggleAttribute("hidden", !emaPath);
-    if (emaPath) emaElement.setAttribute("d", emaPath);
-  }
-  svg.hidden = false;
-  svg.removeAttribute("hidden");
-  emptyState.hidden = true;
-  emptyState.setAttribute("hidden", "");
+  return `<svg class="chart-svg" viewBox="0 0 ${width} ${height}" role="img" aria-label="Price and EMA historical chart">
+    <defs><linearGradient id="chart-area-fill" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stop-color="#3FA9E0" stop-opacity="0.22" /><stop offset="100%" stop-color="#3FA9E0" stop-opacity="0" /></linearGradient></defs>
+    ${grid}
+    ${labels}
+    <path class="chart-area" d="${areaPath}" />
+    <path class="chart-line" d="${pricePath}" />
+    ${emaPath ? `<path class="chart-line chart-line--ema" d="${emaPath}" />` : ""}
+  </svg>`;
 }

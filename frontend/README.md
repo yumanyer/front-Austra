@@ -1,94 +1,74 @@
 # AustralFinance frontend
 
-Frontend visual de AustralFinance construido exclusivamente con **HTML semántico, CSS organizado y JavaScript Vanilla modular**. Esta etapa se limita a completar la experiencia visual de Markets, Oracle e Infrastructure con datos mock aislados. No hay conexiones con backend, API, blockchain, contratos, RPC, Data912, WDK, wallet ni transacciones.
+Frontend de producto para AustralFinance, construido exclusivamente con **HTML5, CSS3 y JavaScript Vanilla**. La interfaz organiza la experiencia en tres niveles: el mercado perpetuo `YPF-PERP`, el Oracle de precio y la infraestructura de publicación hacia HIP-3 / HyperCore y AssetOracle / HyperEVM.
 
-> **Fase 1:** estructura y comportamiento visual. Los valores mock existen únicamente para que las interfaces puedan revisarse y se eliminan desde un único archivo en la siguiente fase.
+La versión publicada actualmente está configurada como **DEMO DATA** para revisión visual. Todos los precios, estados, métricas y puntos del chart provienen de `js/demo-data.js` y están marcados como `SIMULATED` o `DEMO DATA` dentro de la interfaz.
 
 ## Ejecutar localmente
 
-El proyecto no usa framework ni bundler. Desde esta carpeta se puede levantar el preview estático con Node.js:
+El repositorio no depende de un package manager ni de un framework. Para levantar un preview local con Node.js:
 
 ```bash
 node server.cjs
 ```
 
-Luego abrir [http://127.0.0.1:4173/](http://127.0.0.1:4173/). El servidor entrega documentos HTML reales y también ofrece atajos sin extensión:
+Luego abrir `http://127.0.0.1:4173/`. Las rutas disponibles son `/`, `/markets`, `/oracle` e `/infrastructure`.
 
-| Interfaz | Documento HTML | Atajo |
-| --- | --- | --- |
-| Inicio | `index.html` | `/` |
-| Markets | `markets/market.html` | `/markets` |
-| Oracle | `oracle/oracle.html` | `/oracle` |
-| Infrastructure | `infra/infrastructure.html` | `/infra` |
+## Configurar el backend
 
-La navegación utiliza enlaces HTML normales. No existe router SPA ni fallback que reemplace una página completa desde JavaScript.
+La URL base del backend se configura antes de cargar `js/app.js` mediante `window.AUSTRAL_CONFIG` en `index.html`:
 
-## Arquitectura frontend
-
-Cada interfaz contiene su propia estructura semántica: encabezado, navegación, contenido principal, secciones, artículos, enlaces y pie de página. Los módulos JavaScript sólo enlazan eventos y actualizan valores o atributos de nodos que ya existen en el HTML.
-
-| Área | Ubicación | Responsabilidad |
-| --- | --- | --- |
-| Inicio | `index.html` | Presentación del preview y enlaces a las tres interfaces. |
-| Markets | `markets/market.html` + `markets/market.js` | Estructura del mercado, gráfico y métricas visuales. |
-| Oracle | `oracle/oracle.html` + `oracle/oracle.js` | Pipeline, métricas y circuito de protección visual. |
-| Infrastructure | `infra/infrastructure.html` + `infra/infrastructure.js` | Diagrama, flujo y tarjetas de componentes. |
-| Estilos base | `css/root.css` | Variables, reset, base, shell y componentes globales. |
-| Responsive global | `css/media.css` | Breakpoints responsive y adaptación móvil. |
-| Estilos de inicio | `home/home.css` | Hero, tarjetas de interfaces y principios visuales. |
-| Comportamiento común | `js/app.js` | Menú móvil y marcado de navegación activa. |
-| Mock data | `js/mock-data.js` | Única fuente de valores visuales temporales. |
-| Utilidades | `js/page-data.js`, `js/utils/` | Formateo y actualización de nodos existentes. |
-| Gráfico | `js/components/chart.js` | Actualiza el SVG estático del gráfico sin generar una página. |
-| Preview | `server.cjs` | Servidor estático local con rutas explícitas y protección de paths. |
-
-La regla de separación es deliberada: **HTML = estructura**, **CSS = presentación**, **JavaScript = interacción** y **`mock-data.js` = valores temporales**. En esta fase no se agregan contratos de datos externos ni funciones de integración.
-
-## Datos mock
-
-Todo valor visual temporal vive en `js/mock-data.js`, exportado como `MOCK_SNAPSHOT`. Las páginas importan ese fixture a través de `loadMockSnapshot()` y no realizan solicitudes de red. Para eliminar los datos en la siguiente fase basta con reemplazar ese límite por la fuente acordada, sin reconstruir la estructura de las interfaces.
-
-## Verificación
-
-La prueba frontend-only valida la existencia de documentos reales, navegación modular, datos mock y ausencia de patrones de integración o renderizado SPA:
-
-```bash
-npm test
+```html
+<script>
+  window.AUSTRAL_CONFIG = {
+    API_URL: "https://api.example.com",
+    USE_DEMO_DATA: false
+  };
+</script>
 ```
 
-También se pueden validar sintácticamente los módulos propios y el servidor:
+Con `USE_DEMO_DATA: true`, el cliente no realiza requests y usa el fixture explícito de `js/demo-data.js`. Para conectar el backend, cambiar la bandera a `false` y configurar `API_URL`.
 
-```bash
-find js -type f -name '*.js' -print0 | xargs -0 -n1 node --check
-node --check server.cjs
+El cliente centralizado consulta:
+
+```text
+GET /health
+GET /oracle/price/YPF
+GET /market/YPF-PERP
 ```
+
+Las respuestas se normalizan en `js/api.js`. Los componentes nunca hacen `fetch()` directamente. Si un endpoint falla, la UI muestra el estado correspondiente (`Oracle unavailable`, `Market data unavailable`, `Backend unavailable`) y deja las métricas sin valor.
 
 ## Estructura
 
 ```text
 index.html
-home/home.css
-markets/market.html
-markets/market.js
-oracle/oracle.html
-oracle/oracle.js
-infra/infrastructure.html
-infra/infrastructure.js
-css/root.css
-css/media.css
+css/styles.css
 js/app.js
-js/mock-data.js
-js/page-data.js
-js/utils/index.js
+js/api.js
+js/state.js
+js/utils.js
+js/components/common.js
 js/components/chart.js
-js/api/
-js/blockchain/
-js/wallet/
-server.cjs
-package.json
-package-lock.json
-tests/smoke.mjs
+js/views/market.js
+js/views/oracle.js
+js/views/infrastructure.js
 logo.png
+server.cjs
 ```
 
-Los directorios `backend/` y `contracts/`, si existen en el repositorio, quedan fuera del alcance de esta etapa y no se modifican.
+El gráfico espera una serie real dentro de `history`, `series` o `candles` en la respuesta del endpoint de Market. En modo demo usa la serie explícita de `js/demo-data.js`; con el backend real y sin histórico, muestra `Historical data unavailable`.
+
+## Verificación
+
+La prueba de normalización se ejecuta con:
+
+```bash
+node tests/smoke.mjs
+```
+
+Además, todos los módulos se pueden validar con `node --check`.
+
+## Datos no implementados
+
+El repositorio auditado no incluye backend, contratos, ABI o endpoints de cadena. En la variante DEMO, Volume, Open Interest y estados blockchain se muestran con valores fixture sólo para hacer visible la composición, siempre dentro de un contexto `DEMO DATA`. Al desactivar el modo demo, la interfaz vuelve a mostrar `—`, `UNAVAILABLE` o `COMING SOON` hasta que exista una fuente real. La arquitectura permanece preparada para incorporar esos campos sin cambios visuales.
