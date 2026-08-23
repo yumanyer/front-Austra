@@ -6,7 +6,7 @@
 
 La Fase 2 prepara el frontend de AustralFinance para consumir el backend real mediante una capa de datos desacoplada. La interfaz visual fue reorganizada y aprobada en el commit [`9f192c6f`](https://github.com/yumanyer/front-Austra/commit/9f192c6f), identificado como `UUXX`; la implementación de la Data Layer se completó posteriormente y se valida en este documento.
 
-En esta implementación se modificó únicamente el frontend dentro del alcance de la Data Layer. Los cambios HTML/CSS se limitan a representar como unavailable los campos sin fuente real y a deshabilitar períodos históricos no soportados; no se alteraron branding, layout, tipografías, colores, responsive, navegación, backend, contratos, blockchain o wallet. El código realiza requests contra `/health`, `/oracle/price/YPF` y `/market/YPF-PERP` cuando `USE_DEMO_DATA` es `false`.
+En esta implementación se modificó únicamente el frontend dentro del alcance de la Data Layer y el cierre visual read-only de Infrastructure. Los cambios HTML/CSS conservan branding, layout, tipografías, colores, responsive y navegación; no se alteraron Market, Oracle, backend, contratos ni wallet. Además de las requests HTTP contra `/health`, `/oracle/price/YPF` y `/market/YPF-PERP`, Infrastructure consulta el JSON-RPC público configurado de Hyperliquid Testnet sólo para verificar estado on-chain, sin firmar ni enviar transacciones.
 
 La especificación de referencia vigente es `pasted_content_5.txt`, con `pasted_content_4.txt` como contexto inmediato de implementación. El estado observado incluye el backend local sincronizado y el frontend sobre el que se aplicó la Data Layer.
 
@@ -24,12 +24,13 @@ La base ya contiene HTML real por interfaz, hojas CSS separadas, scripts especí
 | Normalización | Implementado | [`js/api/normalize.js`](../js/api/normalize.js) | Modelos Health, Oracle y Market con campos opcionales explícitos |
 | API client | Implementado | [`js/api/client.js`](../js/api/client.js) | Transporte central con timeout, AbortController y errores clasificados |
 | Catálogo de endpoints | Implementado | [`js/api/endpoints.js`](../js/api/endpoints.js) | Rutas centralizadas sin duplicación en page controllers |
-| Configuración de API | Implementado | [`js/api/config.js`](../js/api/config.js) | `API_URL`, `USE_DEMO_DATA` y timeout centralizados |
+| Configuración de API | Implementado | [`js/api/config.js`](../js/api/config.js) | `API_URL`, `USE_DEMO_DATA`, timeouts HTTP y RPC centralizados |
 | Estado compartido | Implementado | [`js/state.js`](../js/state.js) | `loading`, `lastRefresh`, snapshot, refresh deduplicado y errores parciales |
 | Demo mode | Implementado | [`js/demo-data.js`](../js/demo-data.js) y `loadPageSnapshot()` | Debe mantenerse aislado del modo real |
 | Manejo de errores | Implementado | [`js/api/client.js`](../js/api/client.js), `emptyNotice()` y `statusBadge()` | Códigos de configuración, red, timeout, abort, HTTP, JSON y payload |
 | Tests | Implementado | [`tests/smoke.mjs`](../tests/smoke.mjs) | Cubre Health, Oracle, Market, tiempo, breaker, CCL, ausencias, errores y modos |
-| Blockchain | Deliberadamente no integrado | [`js/blockchain/README.md`](../js/blockchain/README.md) | Debe permanecer sin integración |
+| Infrastructure on-chain | Implementado como consulta RPC read-only | [`../infra/infrastructure.js`](../infra/infrastructure.js), [`../infra/onchain-data.js`](../infra/onchain-data.js), [`../infra/onchain-utils.js`](../infra/onchain-utils.js) | Chain ID, latest block, bytecode y receipts; fallback explícito a metadata |
+| Blockchain transaccional | No integrado | [`js/blockchain/README.md`](../js/blockchain/README.md) | Sin ABI, firma ni escritura |
 | Wallet | Deliberadamente no integrado | [`js/wallet/README.md`](../js/wallet/README.md) | Debe permanecer sin integración |
 
 ## 3. Arquitectura implementada
@@ -56,7 +57,14 @@ Data layer
 Backend configurado
     ├── GET /health
     ├── GET /oracle/price/YPF
-    └── GET /market/YPF-PERP
+    ├── GET /market/YPF-PERP
+
+Infrastructure on-chain read-only
+    ├── eth_chainId
+    ├── eth_blockNumber
+    ├── eth_getCode
+    ├── eth_getTransactionByHash
+    └── eth_getTransactionReceipt
 ```
 
 Las páginas Market, Oracle e Infrastructure deben consumir el mismo snapshot del ciclo de carga correspondiente. Ninguna página debe realizar un `fetch` directo, repetir rutas de backend, interpretar el JSON crudo o cargar un recurso que pertenece a otra página. El flujo deseado es:
@@ -94,16 +102,18 @@ La configuración debe continuar siendo central y modificable sin editar cada p�
 | `ORACLE_PRICE` | `GET` | `/oracle/price/YPF` | Precio, EMA, referencias de mercado y señales del breaker |
 | `MARKET` | `GET` | `/market/YPF-PERP` | Instrumento, precios perpetuos, funding, leverage y señales HIP-3 |
 
-La base de URL de desarrollo puede ser `http://localhost:3000`, pero ese valor no debe quedar hardcodeado dentro de `market.js`, `oracle.js`, `infrastructure.js` ni en normalizadores. La configuración propuesta es conceptualmente equivalente a:
+La base de URL de desarrollo puede ser `http://localhost:3000`, pero ese valor no debe quedar hardcodeado dentro de `market.js`, `oracle.js`, `infrastructure.js` ni en normalizadores. La configuración aplicada mantiene HTTP y RPC read-only separados:
 
 ```js
 window.AUSTRAL_CONFIG = {
   API_URL: "http://localhost:3000",
-  USE_DEMO_DATA: false
+  USE_DEMO_DATA: false,
+  RPC_URL: "https://rpc.hyperliquid-testnet.xyz/evm",
+  RPC_TIMEOUT_MS: 5000
 };
 ```
 
-Este fragmento es una referencia de configuración futura, no una modificación aplicada en esta entrega. La misma configuración debe permitir pasar posteriormente de localhost a una IP de VPS o a un dominio sin cambiar las páginas.
+`RPC_URL` sólo alimenta la consulta on-chain de Infrastructure. Si el endpoint no responde, si devuelve una cadena distinta de `998` o si una respuesta no puede comprobarse, la UI conserva metadata registrada pero muestra el estado verificable como `UNAVAILABLE` o `ERROR`; no activa un fallback demo silencioso.
 
 ## 5. Modelo normalizado de Oracle
 
@@ -383,7 +393,7 @@ Las funciones existentes `safeErrorMessage`, `emptyNotice` y `statusBadge` deben
 |---|---|---|---|
 | Market | `snapshot.market`, `snapshot.oracle`, datos de Health que correspondan | Actualizar precios, métricas, estados, chart e interacciones del DOM existente | Hacer `fetch`, interpretar JSON crudo o pedir Oracle por su cuenta |
 | Oracle | `snapshot.oracle`, Health normalizado cuando sea necesario | Actualizar pipeline, métricas, EMA, breaker y avisos | Inferir estados o consultar `/health` directamente |
-| Infrastructure | `snapshot.health`, `snapshot.oracle`, `snapshot.market.hip3` | Actualizar estados disponibles y mantener conceptos arquitectónicos estáticos | Afirmar estados de HyperCore/HyperEVM sin evidencia o hacer requests duplicadas |
+| Infrastructure | `snapshot.health`, `snapshot.oracle`, `snapshot.market.hip3` y RPC read-only | Actualizar estados backend disponibles, metadata de deployment y verificación on-chain | Afirmar estados de HyperCore/HIP-3 sin evidencia, firmar o hacer requests HTTP duplicadas |
 
 El `innerHTML` queda reservado para piezas pequeñas realmente reutilizables, como un badge, un aviso seguro o el SVG del chart si el componente lo necesita. No debe utilizarse para reconstruir páginas completas ni para reemplazar el shell visual.
 
@@ -403,6 +413,7 @@ El smoke test actual cubre la normalización y el comportamiento de la Data Laye
 | Unidades | Ratios y porcentajes conservados en el modelo; conversiones explícitas sólo para presentación |
 | Ausencias y presentación | El modelo backend mantiene ausencias; `presentation-data.js` aporta sólo valores visuales de Volume, OI e histórico |
 | Demo/real | Demo sin requests; modo real sin fallback silencioso a fixture |
+| On-chain | Metadata Hyperliquid Testnet, parsing hex, bytecode, receipts y estados RPC sin red |
 
 Los tests deben seguir siendo unitarios o de normalización y no deben requerir que el backend esté ejecutándose. Cualquier test HTTP deberá pertenecer a una suite de integración separada y explícita, fuera del smoke test básico.
 
@@ -429,23 +440,24 @@ La siguiente lista registra el estado de la implementación actual. El contrato 
 | Real mode queda preparado | **Implementado y probado contra backend local; datos principales reales y visuales separados** |
 | Market consume modelo normalizado | **Implementado; no accede a `raw`** |
 | Oracle consume modelo normalizado | **Implementado; no accede a `raw`** |
-| Infrastructure consume datos disponibles | **Implementado desde Health, Oracle y Market normalizados** |
-| Blockchain sigue sin integración | **Cumplido y debe preservarse** |
+| Infrastructure consume datos disponibles | **Implementado desde Health, Oracle, Market normalizados y RPC read-only** |
+| Infrastructure distingue metadata de evidencia RPC | **Implementado: CONNECTED, DEPLOYED, SUCCESS, UNAVAILABLE, ERROR y NOT DEPLOYED según señal** |
+| Blockchain transaccional sigue sin integración | **Cumplido: no hay ABI, firma ni escritura** |
 | Wallet sigue sin integración | **Cumplido y debe preservarse** |
 | Smoke tests cubren adaptaciones | **Implementado y ejecutado** |
 | `node --check` continúa pasando | **Validado para los módulos relevantes** |
 | README describe arquitectura y limitaciones | **Implementado en `frontend/README.md`** |
 | Backend no se modifica | **Regla vigente** |
-| No se implementa deployment | **Regla vigente** |
+| Metadata y receipts de deployment se presentan read-only | **Implementado con fallback explícito** |
 
 ## 17. Validación contra el backend real
 La implementación se ejecutó sobre la copia local completa y el backend fue utilizado como fuente de verdad. Se confirmaron las rutas parametrizadas `GET /health`, `GET /oracle/price/:symbol` y `GET /market/:symbol`, sus parámetros `YPF` y `YPF-PERP`, timestamps Unix en segundos, los modelos Oracle/Market y los subobjetos Health. En runtime, `/health`, `/oracle/price/YPF` y `/market/YPF-PERP` respondieron `200` con el backend local. Oracle entregó precio real con `source: "ema_fallback"` y Market entregó `markPrice`, `indexPrice`, `fundingRate: 0`, `maxLeverage` y estado `offline`. El frontend conserva esos campos reales y aplica únicamente la capa visual separada para Volume, Open Interest e histórico.
 
-La revisión final del diff confirmó que los cambios visuales se limitan a presentar datos de producto separados del backend: valores de Volume/OI y series Price/EMA por intervalo. No se alteraron branding, layout, tipografías, colores ni navegación. Blockchain, wallet, contratos, ABI, RPC, Web3, HyperEVM, HyperCore, VPS, Nginx, dominio, HTTPS y deployment permanecen fuera de esta fase.
+La revisión final del diff confirmó que los cambios se limitan al frontend: Infrastructure agrega metadata estática de deployment, tarjetas on-chain y verificación JSON-RPC read-only. No se alteraron branding, layout, tipografías, colores, navegación, Market, Oracle, backend, contracts ni wallet. No se agregaron ABI, Web3, ethers, viem, firma o envío de transacciones. HIP-3 y HyperCore permanecen `UNAVAILABLE` porque no existe una señal inequívoca de activación en los recursos consultados.
 
 ## 18. Registro de esta entrega
 
-Esta implementación modifica únicamente archivos del frontend dentro del alcance de la Data Layer y la presentación visual: configuración, endpoints, cliente HTTP, normalización, estado, utilidad temporal, `presentation-data.js`, controladores de página, chart, tests y documentación. No se modificaron backend, contracts, blockchain ni wallet. El modo demo no ejecuta requests; el modo real fue probado contra el backend local con respuestas 200. Los valores de Volume/OI/histórico están claramente aislados como presentación y no alteran ningún dato real.
+Esta entrega modifica únicamente archivos del frontend dentro del alcance de la Data Layer y el estado on-chain read-only: `infra.html`, `infra.css`, `infrastructure.js`, `onchain-data.js`, `onchain-utils.js`, configuración RPC, smoke tests y documentación. No se modificaron backend, contracts, Market, Oracle ni wallet. El modo demo no ejecuta requests HTTP; en modo real, Infrastructure consulta el RPC configurado con timeout y fallback explícito a metadata. Los contratos YPFOracle y KinetiqLaunchMock fueron verificados por bytecode y receipts `status: 0x1`; la transacción suministrada para `YPF-PERP deployMarket` conserva su hash, pero el RPC devolvió `Invalid params` por longitud hexadecimal impar y se representa como `UNAVAILABLE` sin convertirlo en éxito.
 
 ## Referencias
 
@@ -455,3 +467,6 @@ Esta implementación modifica únicamente archivos del frontend dentro del alcan
 4. [Estado actual del frontend](../js/state.js)
 5. [Datos mock actuales](../js/demo-data.js)
 6. [Smoke test actual](../tests/smoke.mjs)
+7. [Metadata on-chain de Infrastructure](../infra/onchain-data.js)
+8. [Utilidades de verificación on-chain](../infra/onchain-utils.js)
+9. [Especificación vigente de Infrastructure — `pasted_content_9.txt`](https://github.com/yumanyer/front-Austra/blob/main/pasted_content_9.txt)

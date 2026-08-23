@@ -5,6 +5,29 @@ import { normalizeHealth, normalizeMarket, normalizeOracle } from "../js/api/nor
 import { normalizeTimestamp, relativeTime } from "../js/utils/time.js";
 import { formatRatioPercent, valueOrDash } from "../js/utils/format.js";
 import { PRESENTATION_DATA, getPresentationHistory } from "../js/presentation-data.js";
+import { DEPLOYMENT_METADATA } from "../infra/onchain-data.js";
+import { parseRpcHex, shortenHex, hasContractCode, resolveContractStatus, resolveReceiptStatus, resolveRpcStatus } from "../infra/onchain-utils.js";
+
+assert.equal(DEPLOYMENT_METADATA.network, "Hyperliquid Testnet");
+assert.equal(DEPLOYMENT_METADATA.chainId, 998);
+assert.equal(DEPLOYMENT_METADATA.deploymentBlock, 62293050);
+assert.equal(DEPLOYMENT_METADATA.contracts.find((contract) => contract.key === "ypfOracle").name, "YPFOracle");
+assert.equal(DEPLOYMENT_METADATA.contracts.find((contract) => contract.key === "kinetiqLaunchMock").name, "KinetiqLaunchMock");
+assert.equal(parseRpcHex("0x3e6"), 998);
+assert.equal(parseRpcHex("0x3b6843a"), 62293050);
+assert.equal(parseRpcHex("not-hex"), undefined);
+assert.equal(shortenHex(DEPLOYMENT_METADATA.transactions[0].hash), "0xcf2208…02dc42");
+assert.equal(hasContractCode("0x60016000"), true);
+assert.equal(hasContractCode("0x"), false);
+assert.equal(resolveContractStatus({ code: "0x6001", receipt: null, rpcConnected: true }), "DEPLOYED");
+assert.equal(resolveContractStatus({ code: "0x", receipt: null, rpcConnected: true }), "NOT DEPLOYED");
+assert.equal(resolveContractStatus({ code: null, receipt: null, rpcConnected: false }), "UNAVAILABLE");
+assert.equal(resolveReceiptStatus({ status: "0x1" }, true), "SUCCESS");
+assert.equal(resolveReceiptStatus({ status: "0x0" }, true), "ERROR");
+assert.equal(resolveReceiptStatus(null, true), "UNAVAILABLE");
+assert.equal(resolveRpcStatus({ chainId: 998, latestBlock: 62293050, expectedChainId: 998 }), "CONNECTED");
+assert.equal(resolveRpcStatus({ chainId: 999, latestBlock: 62293050, expectedChainId: 998 }), "ERROR");
+assert.equal(resolveRpcStatus({ chainId: undefined, latestBlock: 62293050, expectedChainId: 998 }), "UNAVAILABLE");
 
 const oracle = normalizeOracle({
   symbol: "YPF",

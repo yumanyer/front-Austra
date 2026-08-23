@@ -10,9 +10,9 @@ La experiencia se organiza en tres superficies principales:
 | --- | --- |
 | **Market** | Visualización del mercado perpetuo `YPF-PERP`, sus referencias de precio, métricas operativas y chart de presentación. |
 | **Oracle** | Precio de referencia, EMA, CCL, Circuit Breaker y estado del feed. |
-| **Infrastructure** | Estado de publicación hacia HIP-3 / HyperCore y AssetOracle / HyperEVM, únicamente cuando el backend lo respalda. |
+| **Infrastructure** | Arquitectura conceptual, metadata de deployment y estado on-chain read-only de HIP-3 / HyperCore / YPFOracle / HyperEVM. |
 
-La separación entre interfaz, backend, blockchain y wallet permite completar cada integración de forma independiente. La Data Layer HTTP consume y normaliza los datos reales; una capa visual independiente aporta únicamente los valores de presentación que todavía no existen en el contrato Market.
+La separación entre interfaz, backend, blockchain y wallet permite completar cada integración de forma independiente. Infrastructure consulta RPC sólo en modo lectura y mantiene la escritura blockchain y wallet fuera de alcance. La Data Layer HTTP consume y normaliza los datos reales; una capa visual independiente aporta únicamente los valores de presentación que todavía no existen en el contrato Market.
 
 > **Regla de datos:** Price, EMA, Data source, Funding Rate, Mark Price, Index Price, CCL, Breaker, Threshold, Current deviation, Release ticks, Oracle status y Market status conservan su origen backend o fixture principal. Open Interest, 24h Volume y la serie histórica del chart son datos de presentación aislados y no sobrescriben ningún campo real.
 
@@ -594,29 +594,13 @@ No existe fallback silencioso a demo. Si el backend devuelve un error, el recurs
 
 ## 17. Blockchain, wallet y contratos
 
-La Fase 2 no integra blockchain ni wallet. Las siguientes carpetas permanecen como placeholders o documentación:
+Infrastructure incorpora una consulta **read-only** independiente de la Data Layer HTTP para presentar el estado on-chain de Hyperliquid Testnet. La metadata estática de deployment se conserva en `infra/onchain-data.js`; `infra/infrastructure.js` consulta `eth_chainId`, `eth_blockNumber`, `eth_getCode`, `eth_getTransactionByHash` y `eth_getTransactionReceipt` mediante JSON-RPC estándar, sin librerías externas.
 
-```
-js/blockchain/
-js/wallet/
-```
+El deployment documentado corresponde a `Hyperliquid Testnet`, Chain ID `998`, bloque `62293050`, mercado `YPF-PERP`, underlying `YPF` y leverage máximo `5x`. El contrato espejo auditable real del repositorio es `YPFOracle`, por lo que la tarjeta HyperEVM muestra su dirección `0xb4daFE6f02F32b590da1758cCea04DE70F08555A`; `KinetiqLaunchMock` se identifica explícitamente como mock de rehearsal y no como HyperCore productivo.
 
-No se agregaron:
+La UI diferencia metadata registrada de evidencia RPC. `CONNECTED` exige chain ID y latest block válidos en la red esperada; `DEPLOYED` exige bytecode no vacío o una confirmación de receipt coherente; `NOT DEPLOYED` representa código vacío; `SUCCESS` deriva de un receipt con status `0x1`; y un fallo o mismatch de RPC queda como `UNAVAILABLE` o `ERROR`. La arquitectura conceptual puede seguir mostrando HIP-3, HyperCore y AssetOracle, pero no se marcan como `ACTIVE` o `CONNECTED` sin una señal verificable.
 
-```
-Web3
-ethers
-viem
-ABI
-RPC
-MetaMask
-WalletConnect
-WDK
-firmas
-transacciones
-```
-
-La integración blockchain se mantiene separada de la Data Layer HTTP. Los contratos se encuentran fuera del frontend, en `../contracts/`, y no se modifican desde esta fase.
+La integración no firma, no conecta wallet, no ejecuta transacciones y no realiza llamadas ABI. Las carpetas `js/blockchain/` y `js/wallet/` siguen siendo documentación/placeholders para esas capacidades futuras. Los contratos se encuentran fuera del frontend, en `../contracts/`, y no fueron modificados.
 
 ---
 
@@ -650,6 +634,8 @@ El test cubre:
 
 - Demo mode y real mode.
 
+- Metadata de deployment Hyperliquid Testnet, parsing hexadecimal, bytecode y estados de receipts on-chain.
+
 La sintaxis de los módulos principales se puede validar con:
 
 ```bash
@@ -678,6 +664,8 @@ En la validación end-to-end local también se ejecutó la suite del backend, co
 | Manejo de errores | Completado |
 | Demo mode separado del modo real | Completado |
 | Integración HTTP con backend | Completado |
+| Metadata estática de deployment Hyperliquid Testnet | Completado |
+| Verificación RPC read-only en Infrastructure | Completado con fallback explícito a metadata |
 | CORS de desarrollo local | Verificado en entorno local |
 | Health, Oracle y Market | Conectados |
 | Timestamps y freshness | Completado |
@@ -695,11 +683,11 @@ En la validación end-to-end local también se ejecutó la suite del backend, co
 | --- | --- |
 | Reemplazar Volume y Open Interest visuales por campos backend | Pendiente de ampliación del contrato Market |
 | Reemplazar el histórico visual por histórico backend | Pendiente de endpoint o payload histórico |
-| Conectar estados reales de HyperCore y HyperEVM | Pendiente de contrato operativo explícito |
+| Verificación directa HIP-3 / HyperCore | No disponible; permanece `UNAVAILABLE` sin fuente inequívoca |
 | Configuración de producción para `API_URL` | Pendiente |
 | Validación contra backend desplegado en VPS | Pendiente |
-| Integración blockchain | Fuera de Fase 2 |
-| Integración wallet | Fuera de Fase 2 |
+| Escritura, firma y transacciones blockchain | Fuera de alcance |
+| Integración wallet | Fuera de alcance |
 
 Los valores visuales actuales están deliberadamente aislados en `presentation-data.js`. Cuando el backend exponga los campos correspondientes, se podrá sustituir esa fuente sin alterar el contrato de Price, EMA, CCL, Breaker ni el resto de la UI.
 
@@ -780,4 +768,4 @@ La organización mantiene separados backend, contratos y frontend. Las futuras i
 
 1. [Smoke test](https://github.com/yumanyer/front-Austra/blob/main/frontend/tests/smoke.mjs)
 
-> Esta propuesta no modifica el repositorio. Es una versión sugerida del README, alineada con la implementación actual y lista para reemplazar el documento vigente cuando se apruebe.
+> Este README describe la implementación vigente del frontend, incluida la capa on-chain read-only de Infrastructure y sus limitaciones verificables.
