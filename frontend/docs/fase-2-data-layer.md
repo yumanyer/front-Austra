@@ -299,7 +299,7 @@ MarketModel
 └── lastPushAt
 ```
 
-Los campos que el backend no proporciona —`volume24h`, `openInterest`, `history`, `hyperCoreStatus` y `hyperEvmStatus`— ya no forman parte del modelo normalizado ni del fixture demo. `change24h` tampoco se lee desde Market: cuando se muestra el cambio del hero, proviene únicamente de `oracle.pctChange`. La ausencia de histórico lleva al estado de chart `Historical data unavailable`; no se genera una serie falsa.
+Los campos `volume24h`, `openInterest`, `history`, `hyperCoreStatus` y `hyperEvmStatus` no forman parte del modelo normalizado porque el backend no los proporciona. Para completar la presentación visual sin contaminar la respuesta backend, `js/presentation-data.js` mantiene separados Open Interest `$2.84M`, 24h Volume `$1.27M` y una serie Price/EMA por intervalo. `change24h` tampoco se lee desde Market: cuando se muestra el cambio del hero, proviene únicamente de `oracle.pctChange`. Price y EMA del último punto del chart se alinean con los valores reales cuando están disponibles; la serie anterior es exclusivamente visual.
 
 La normalización actual trata `hip3.*` como un submodelo cuando el backend lo entrega. No infiere `HyperCore` o `HyperEVM` a partir de `hip3` porque esos estados no están presentes en el contrato Market.
 
@@ -358,9 +358,9 @@ snapshot compartido
 UI
 ```
 
-No debe existir una mezcla silenciosa entre backend real y valores del fixture. En modo real, cada campo ausente debe permanecer ausente o adoptar el fallback visual ya existente. El chart no debe reutilizar `history` demo si el endpoint real no la entrega.
+No debe existir una mezcla silenciosa entre backend real y valores de presentación. Price, EMA, Data source, CCL, Breaker, funding, mark e index conservan exclusivamente el backend o el fixture principal seleccionado por `USE_DEMO_DATA`. Open Interest, 24h Volume y el histórico del chart provienen de `presentation-data.js` como capa visual explícita y no se incorporan al modelo Market.
 
-En el estado actual, `USE_DEMO_DATA=true` continúa funcionando con un fixture limitado al contrato disponible y sin datos ficticios de volumen, Open Interest o histórico. El camino `USE_DEMO_DATA=false` consulta únicamente la Data Layer y conserva como unavailable cada campo que el backend no entrega, sin fallback silencioso al fixture.
+En el estado actual, `USE_DEMO_DATA=true` y `USE_DEMO_DATA=false` conservan la misma presentación visual: los datos principales cambian entre fixture y backend, mientras Open Interest, 24h Volume y el histórico se leen de la capa de presentación independiente. Los datos visuales no sobrescriben Price, EMA, CCL, Breaker, funding, mark, index ni otros campos reales.
 
 ## 13. Manejo de errores
 
@@ -401,7 +401,7 @@ El smoke test actual cubre la normalización y el comportamiento de la Data Laye
 | Breaker | `frozen`, precio congelado, motivo, timestamp, ticks, valores ausentes y status no inventado |
 | CCL | `reportedCcl`, `impliedCcl`, `cclSampled`, `cclDeviation`, alias `ccl` sólo con política explícita |
 | Unidades | Ratios y porcentajes conservados en el modelo; conversiones explícitas sólo para presentación |
-| Ausencias | Payload parcial sin history, volume, OI, HyperCore, HyperEVM o subobjetos operativos |
+| Ausencias y presentación | El modelo backend mantiene ausencias; `presentation-data.js` aporta sólo valores visuales de Volume, OI e histórico |
 | Demo/real | Demo sin requests; modo real sin fallback silencioso a fixture |
 
 Los tests deben seguir siendo unitarios o de normalización y no deben requerir que el backend esté ejecutándose. Cualquier test HTTP deberá pertenecer a una suite de integración separada y explícita, fuera del smoke test básico.
@@ -426,7 +426,7 @@ La siguiente lista registra el estado de la implementación actual. El contrato 
 | CCL tratado explícitamente | **Implementado; `ccl` no se deriva de `reportedCcl`** |
 | Campos inexistentes no se rellenan con demo | **Implementado en normalizadores y cubierto por tests** |
 | Demo mode funciona | **Cumplido en la base actual** |
-| Real mode queda preparado | **Implementado y probado contra backend local; Oracle/Market muestran datos reales o unavailable sin fallback demo** |
+| Real mode queda preparado | **Implementado y probado contra backend local; datos principales reales y visuales separados** |
 | Market consume modelo normalizado | **Implementado; no accede a `raw`** |
 | Oracle consume modelo normalizado | **Implementado; no accede a `raw`** |
 | Infrastructure consume datos disponibles | **Implementado desde Health, Oracle y Market normalizados** |
@@ -439,13 +439,13 @@ La siguiente lista registra el estado de la implementación actual. El contrato 
 | No se implementa deployment | **Regla vigente** |
 
 ## 17. Validación contra el backend real
-La implementación se ejecutó sobre la copia local completa y el backend fue utilizado como fuente de verdad. Se confirmaron las rutas parametrizadas `GET /health`, `GET /oracle/price/:symbol` y `GET /market/:symbol`, sus parámetros `YPF` y `YPF-PERP`, timestamps Unix en segundos, los modelos Oracle/Market y los subobjetos Health. En runtime, `/health`, `/oracle/price/YPF` y `/market/YPF-PERP` respondieron `200` con el backend local. Oracle entregó precio real con `source: "ema_fallback"` y Market entregó `markPrice`, `indexPrice`, `fundingRate: 0`, `maxLeverage` y estado `offline`. El frontend conserva los campos sin fuente como unavailable y no usa demo como fallback.
+La implementación se ejecutó sobre la copia local completa y el backend fue utilizado como fuente de verdad. Se confirmaron las rutas parametrizadas `GET /health`, `GET /oracle/price/:symbol` y `GET /market/:symbol`, sus parámetros `YPF` y `YPF-PERP`, timestamps Unix en segundos, los modelos Oracle/Market y los subobjetos Health. En runtime, `/health`, `/oracle/price/YPF` y `/market/YPF-PERP` respondieron `200` con el backend local. Oracle entregó precio real con `source: "ema_fallback"` y Market entregó `markPrice`, `indexPrice`, `fundingRate: 0`, `maxLeverage` y estado `offline`. El frontend conserva esos campos reales y aplica únicamente la capa visual separada para Volume, Open Interest e histórico.
 
-La revisión final del diff confirmó que los cambios visuales se limitan a representar datos no disponibles: em dash, estado de chart unavailable y controles de período deshabilitados. No se alteraron branding, layout, tipografías, colores ni navegación. Blockchain, wallet, contratos, ABI, RPC, Web3, HyperEVM, HyperCore, VPS, Nginx, dominio, HTTPS y deployment permanecen fuera de esta fase.
+La revisión final del diff confirmó que los cambios visuales se limitan a presentar datos de producto separados del backend: valores de Volume/OI y series Price/EMA por intervalo. No se alteraron branding, layout, tipografías, colores ni navegación. Blockchain, wallet, contratos, ABI, RPC, Web3, HyperEVM, HyperCore, VPS, Nginx, dominio, HTTPS y deployment permanecen fuera de esta fase.
 
 ## 18. Registro de esta entrega
 
-Esta implementación modifica únicamente archivos del frontend dentro del alcance de la Data Layer: configuración, endpoints, cliente HTTP, normalización, estado, utilidad temporal, controladores de página, componentes de representación, tests y documentación. No se modificaron backend, contracts, blockchain ni wallet. El modo demo no ejecuta requests y no agrega datos ficticios de volumen, Open Interest o histórico; el modo real fue probado contra el backend local con respuestas 200 y muestra sólo los campos entregados.
+Esta implementación modifica únicamente archivos del frontend dentro del alcance de la Data Layer y la presentación visual: configuración, endpoints, cliente HTTP, normalización, estado, utilidad temporal, `presentation-data.js`, controladores de página, chart, tests y documentación. No se modificaron backend, contracts, blockchain ni wallet. El modo demo no ejecuta requests; el modo real fue probado contra el backend local con respuestas 200. Los valores de Volume/OI/histórico están claramente aislados como presentación y no alteran ningún dato real.
 
 ## Referencias
 

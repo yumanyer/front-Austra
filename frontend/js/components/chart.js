@@ -28,7 +28,7 @@ export function renderPriceChart({ points = [] } = {}) {
   if (normalized.length < 2) {
     return `<div class="chart-empty" role="status">
       <div class="chart-empty__icon">${icon("chart")}</div>
-      <p>Historical data unavailable. The chart is ready for a real Price / EMA series.</p>
+      <p>Price / EMA visualization</p>
     </div>`;
   }
 

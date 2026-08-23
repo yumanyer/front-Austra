@@ -31,7 +31,6 @@
 .chart-periods { display: flex; gap: 0.2rem; }
 .chart-period { padding: 0.32rem 0.48rem; border: 1px solid transparent; border-radius: 4px; background: transparent; color: var(--muted); font-family: "IBM Plex Mono", monospace; font-size: 0.63rem; }
 .chart-period:hover, .chart-period.is-active { border-color: var(--line-strong); background: var(--celeste-soft); color: var(--celeste-bright); }
-.chart-period:disabled { cursor: not-allowed; opacity: 0.5; }
 .chart-legend { display: flex; flex-wrap: wrap; gap: 0.8rem; margin-top: 0.7rem; color: var(--muted); font-family: "IBM Plex Mono", monospace; font-size: 0.62rem; }
 .legend-item { display: inline-flex; align-items: center; gap: 0.35rem; }
 .legend-line { width: 18px; height: 2px; background: var(--celeste-bright); }

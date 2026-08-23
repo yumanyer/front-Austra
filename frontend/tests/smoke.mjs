@@ -4,6 +4,7 @@ import { ApiError, requestJson } from "../js/api/client.js";
 import { normalizeHealth, normalizeMarket, normalizeOracle } from "../js/api/normalize.js";
 import { normalizeTimestamp, relativeTime } from "../js/utils/time.js";
 import { formatRatioPercent, valueOrDash } from "../js/utils/format.js";
+import { PRESENTATION_DATA, getPresentationHistory } from "../js/presentation-data.js";
 
 const oracle = normalizeOracle({
   symbol: "YPF",
@@ -37,6 +38,15 @@ assert.equal(oracle.circuitBreaker.frozen, false);
 assert.equal(oracle.circuitBreaker.thresholdPct, 0.1);
 assert.equal(formatRatioPercent(oracle.circuitBreaker.thresholdPct), "+10.00%");
 assert.equal(valueOrDash(0, formatRatioPercent), "0.00%");
+assert.equal(PRESENTATION_DATA.openInterest, "$2.84M");
+assert.equal(PRESENTATION_DATA.volume24h, "$1.27M");
+for (const period of ["1H", "1D", "1W"]) {
+  const presentationHistory = getPresentationHistory(period, { price: 51.25, ema: 51.249986 });
+  assert.equal(presentationHistory.length > 1, true);
+  assert.equal(presentationHistory.at(-1).price, 51.25);
+  assert.equal(presentationHistory.at(-1).ema, 51.249986);
+}
+assert.notEqual(getPresentationHistory("1H")[0].timestamp, getPresentationHistory("1D")[0].timestamp);
 assert.equal(oracle.reportedCcl, 1180);
 assert.equal(oracle.ccl, undefined);
 assert.equal(oracle.impliedCcl, 1181.2);

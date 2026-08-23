@@ -17,12 +17,26 @@ function setText(selector, value) {
   return element;
 }
 
+function setDocumentHTML(selector, html) {
+  const element = document.querySelector(selector);
+  if (element) element.innerHTML = html;
+  return element;
+}
+
+function setDocumentText(selector, value) {
+  const element = document.querySelector(selector);
+  if (element) element.textContent = value;
+  return element;
+}
+
 function renderSystem(snapshot) {
   const demoMode = snapshot.mode === "simulated";
   const healthResource = snapshot.health;
   const healthStatus = healthResource.status === "success" ? healthResource.data?.status : "UNAVAILABLE";
-  setHTML("[data-system-status]", demoMode ? modeBadge(true, true) : statusBadge(healthStatus, { label: readableStatus(healthStatus), pulse: healthStatus === "CONNECTED" }));
-  setText("[data-system-note]", demoMode ? "Hardcoded visual fixture · no backend request" : "No backend snapshot");
+  setDocumentHTML("[data-system-status]", demoMode ? modeBadge(true, true) : statusBadge(healthStatus, { label: readableStatus(healthStatus), pulse: healthStatus === "CONNECTED" }));
+  const refreshedAt = snapshot.lastRefresh || snapshot.fetchedAt;
+  setDocumentText("[data-system-note]", demoMode ? "Read-only preview" : refreshedAt ? `Last refresh ${new Date(refreshedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}` : "");
+  setDocumentText("[data-updated]", snapshot.fetchedAt ? `updated ${new Date(snapshot.fetchedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}` : "");
 }
 
 function renderInfrastructure(snapshot) {
@@ -47,7 +61,7 @@ function renderInfrastructure(snapshot) {
   setHTML("[data-page-status]", statusBadge(hasAnyReal ? "CONNECTED" : "UNAVAILABLE", { label: hasAnyReal ? "Partial system map" : "Unavailable" }));
   const notice = page?.querySelector("[data-infra-notice]");
   if (notice) {
-    const content = demoMode ? "DEMO DATA: component statuses and displayed metrics are hardcoded for visual review only. No chain connection is being claimed." : !hasAnyReal ? "Infrastructure statuses are unavailable because no backend or chain status endpoint is configured." : "";
+    const content = demoMode ? "Presentation preview: infrastructure map is read-only." : !hasAnyReal ? "Infrastructure statuses are unavailable because no backend or chain status endpoint is configured." : "";
     notice.innerHTML = content ? emptyNotice(content, "warning") : "";
     notice.hidden = !content;
   }

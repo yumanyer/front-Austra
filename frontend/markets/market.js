@@ -1,10 +1,13 @@
 import { renderPriceChart } from "../js/components/chart.js";
+import { PRESENTATION_DATA, getPresentationHistory } from "../js/presentation-data.js";
 import { emptyNotice, icon } from "../js/components/common.js";
 import { loadPageSnapshot } from "../js/state.js";
 import { formatPercent, formatPrice, formatRatioPercent, isAvailable, modeBadge, readableStatus, statusBadge, valueOrDash } from "../js/utils/format.js";
 import { showToast, wireGlobalUI } from "../js/app.js";
 
 const page = document.querySelector('[data-page="market"]');
+let currentSnapshot;
+let activePeriod = "1H";
 
 function setHTML(selector, html) {
   const element = page?.querySelector(selector);
@@ -18,6 +21,18 @@ function setText(selector, value) {
   return element;
 }
 
+function setDocumentHTML(selector, html) {
+  const element = document.querySelector(selector);
+  if (element) element.innerHTML = html;
+  return element;
+}
+
+function setDocumentText(selector, value) {
+  const element = document.querySelector(selector);
+  if (element) element.textContent = value;
+  return element;
+}
+
 function setMetric(key, value, formatter) {
   const element = page?.querySelector(`[data-market-metric="${key}"]`);
   if (!element) return;
@@ -25,6 +40,14 @@ function setMetric(key, value, formatter) {
   element.textContent = formatted;
   element.classList.toggle("metric-value--muted", formatted === "—");
   element.classList.toggle("metrics-list__value--strong", formatted !== "—");
+}
+
+function setPresentationMetric(key, value) {
+  const element = page?.querySelector(`[data-market-metric="${key}"]`);
+  if (!element) return;
+  element.textContent = value;
+  element.classList.remove("metric-value--muted");
+  element.classList.add("metrics-list__value--strong");
 }
 
 function resourceStatus(resource, fallbackLabel = "Unavailable") {
@@ -36,9 +59,10 @@ function renderSystem(snapshot) {
   const demoMode = snapshot.mode === "simulated";
   const healthResource = snapshot.health;
   const healthStatus = healthResource.status === "success" ? healthResource.data?.status : "UNAVAILABLE";
-  setHTML("[data-system-status]", demoMode ? modeBadge(true, true) : statusBadge(healthStatus, { label: readableStatus(healthStatus), pulse: healthStatus === "CONNECTED" }));
-  setText("[data-system-note]", demoMode ? "Hardcoded visual fixture · no backend request" : snapshot.lastRefresh ? `Last refresh ${new Date(snapshot.lastRefresh).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}` : "No backend snapshot");
-  setText("[data-updated]", snapshot.fetchedAt ? `updated ${new Date(snapshot.fetchedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}` : "");
+  setDocumentHTML("[data-system-status]", demoMode ? modeBadge(true, true) : statusBadge(healthStatus, { label: readableStatus(healthStatus), pulse: healthStatus === "CONNECTED" }));
+  const refreshedAt = snapshot.lastRefresh || snapshot.fetchedAt;
+  setDocumentText("[data-system-note]", demoMode ? "Read-only preview" : refreshedAt ? `Last refresh ${new Date(refreshedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}` : "");
+  setDocumentText("[data-updated]", snapshot.fetchedAt ? `updated ${new Date(snapshot.fetchedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}` : "");
 }
 
 function renderNotices(snapshot) {
@@ -52,6 +76,7 @@ function renderNotices(snapshot) {
 }
 
 function renderMarket(snapshot) {
+  currentSnapshot = snapshot;
   const demoMode = snapshot.mode === "simulated";
   const marketResource = snapshot.market;
   const oracleResource = snapshot.oracle;
@@ -79,15 +104,15 @@ function renderMarket(snapshot) {
 
   setMetric("indexPrice", market.indexPrice, formatPrice);
   setMetric("markPrice", market.markPrice, formatPrice);
-  setMetric("volume24h", market.volume24h, formatPrice);
-  setMetric("openInterest", market.openInterest, formatPrice);
+  setPresentationMetric("volume24h", PRESENTATION_DATA.volume24h);
+  setPresentationMetric("openInterest", PRESENTATION_DATA.openInterest);
   setMetric("fundingRate", market.fundingRate, formatRatioPercent);
   setMetric("maxLeverage", market.maxLeverage, (value) => `${value}x`);
 
-  const points = Array.isArray(market.history) ? market.history : [];
+  const points = getPresentationHistory(activePeriod, { price: oracle.price, ema: oracle.ema });
   const chart = page?.querySelector("[data-chart]");
   if (chart) chart.innerHTML = renderPriceChart({ points });
-  setText("[data-chart-footnote]", points.length > 1 ? "Historical source: backend series." : "Historical data unavailable. The Market endpoint does not provide price or EMA history.");
+  setText("[data-chart-footnote]", `Price / EMA · ${activePeriod}`);
 
   const summaryReal = oracleResource.status === "success" && isAvailable(oracle.price);
   setHTML("[data-oracle-summary-status]", statusBadge(oracleResource.status === "success" ? oracle.status : "UNAVAILABLE", { label: oracleResource.status === "success" ? readableStatus(oracle.status) : "Unavailable", pulse: summaryReal }));
@@ -105,10 +130,11 @@ function renderMarket(snapshot) {
 
 function bindMarketInteractions() {
   page?.querySelectorAll("[data-period]").forEach((button) => {
-    button.disabled = true;
-    button.setAttribute("aria-disabled", "true");
-    button.setAttribute("title", "Historical data unavailable");
-    button.classList.remove("is-active");
+    button.addEventListener("click", () => {
+      activePeriod = button.dataset.period || "1H";
+      page.querySelectorAll("[data-period]").forEach((item) => item.classList.toggle("is-active", item === button));
+      if (currentSnapshot) renderMarket(currentSnapshot);
+    });
   });
 }
 

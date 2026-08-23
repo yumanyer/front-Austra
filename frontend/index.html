@@ -35,7 +35,7 @@
           <button class="wallet-button" type="button" data-wallet><span class="icon-slot" data-icon="wallet"></span>Connect Wallet</button>
         </nav>
       </header>
-      <div class="sync-strip" role="status"><span class="sync-strip__label">System</span><span data-system-status></span><span class="sync-strip__note" data-system-note>Hardcoded visual fixture · no backend request</span></div>
+      <div class="sync-strip" role="status"><span class="sync-strip__label">System</span><span data-system-status></span><span class="sync-strip__note" data-system-note>Read-only preview</span></div>
       <main class="app-main" id="main-content">
         <div class="page market-page container" data-page="market">
           <header class="page-header">
@@ -56,13 +56,13 @@
                 </div>
                 <div class="market-identity__meta"><strong>YPF</strong><span aria-hidden="true">·</span><span>BYMA: YPFD</span><span aria-hidden="true">·</span><span>HIP-3 DEX: arg</span></div>
                 <div class="market-header__price">
-                  <p class="price-readout" data-price-readout>$42.315<span class="price-unit">USD</span></p>
-                  <div class="change-readout"><span class="change-readout__value" data-change-value>+1.24%</span><span class="change-readout__label">24h change</span></div>
+                  <p class="price-readout" data-price-readout>—<span class="price-unit">USD</span></p>
+                  <div class="change-readout"><span class="change-readout__value" data-change-value>—</span><span class="change-readout__label">24h change</span></div>
                 </div>
               </div>
               <div class="market-header__side">
                 <span data-market-mode></span>
-                <p class="market-header__side-note" data-market-source>Oracle reference · Data912</p>
+                <p class="market-header__side-note" data-market-source>Oracle price unavailable. No value is simulated.</p>
               </div>
             </div>
           </section>
@@ -74,17 +74,17 @@
                   <div class="chart-periods" role="group" aria-label="Chart period"><button class="chart-period is-active" type="button" data-period="1H">1H</button><button class="chart-period" type="button" data-period="1D">1D</button><button class="chart-period" type="button" data-period="1W">1W</button></div>
                 </div>
                 <div class="chart-wrap" data-chart></div>
-                <p class="chart-footnote" data-chart-footnote>Historical source: DEMO DATA · simulated series. This chart is for visual review only.</p>
+                <p class="chart-footnote" data-chart-footnote>Price / EMA · 1H</p>
               </section>
               <section class="surface metrics-panel" aria-labelledby="metrics-title">
                 <div class="surface__header"><div><h2 class="surface-title" id="metrics-title">Market metrics</h2><p class="surface-subtitle">Values are read from the market endpoint</p></div></div>
                 <div class="metric-grid">
-                  <article class="metric-card"><span class="metric-label">Index Price</span><p class="metric-value" data-market-metric="indexPrice">$42.315</p><p class="metric-detail">Oracle reference</p></article>
-                  <article class="metric-card"><span class="metric-label">Mark Price</span><p class="metric-value" data-market-metric="markPrice">$42.32</p><p class="metric-detail">Perpetual market reference</p></article>
-                  <article class="metric-card"><span class="metric-label">24h Volume</span><p class="metric-value" data-market-metric="volume24h">$1,240,000.00</p><p class="metric-detail">Awaiting backend field</p></article>
-                  <article class="metric-card"><span class="metric-label">Open Interest</span><p class="metric-value" data-market-metric="openInterest">$428,000.00</p><p class="metric-detail">Awaiting backend field</p></article>
-                  <article class="metric-card"><span class="metric-label">Funding Rate</span><p class="metric-value" data-market-metric="fundingRate">+0.01%</p><p class="metric-detail">Perpetual funding</p></article>
-                  <article class="metric-card"><span class="metric-label">Max Leverage</span><p class="metric-value" data-market-metric="maxLeverage">5x</p><p class="metric-detail">Market configuration</p></article>
+                  <article class="metric-card"><span class="metric-label">Index Price</span><p class="metric-value" data-market-metric="indexPrice">—</p><p class="metric-detail">Oracle reference</p></article>
+                  <article class="metric-card"><span class="metric-label">Mark Price</span><p class="metric-value" data-market-metric="markPrice">—</p><p class="metric-detail">Perpetual market reference</p></article>
+                  <article class="metric-card"><span class="metric-label">24h Volume</span><p class="metric-value" data-market-metric="volume24h">$1.27M</p><p class="metric-detail">24h activity</p></article>
+                  <article class="metric-card"><span class="metric-label">Open Interest</span><p class="metric-value" data-market-metric="openInterest">$2.84M</p><p class="metric-detail">Open positions</p></article>
+                  <article class="metric-card"><span class="metric-label">Funding Rate</span><p class="metric-value" data-market-metric="fundingRate">—</p><p class="metric-detail">Perpetual funding</p></article>
+                  <article class="metric-card"><span class="metric-label">Max Leverage</span><p class="metric-value" data-market-metric="maxLeverage">—</p><p class="metric-detail">Market configuration</p></article>
                 </div>
               </section>
             </div>
@@ -92,11 +92,11 @@
               <section class="surface oracle-summary" aria-labelledby="oracle-summary-title">
                 <div class="surface__header"><div><h2 class="surface-title" id="oracle-summary-title">Oracle</h2><p class="surface-subtitle">Price health and publication status</p></div><span data-oracle-summary-status></span></div>
                 <div class="surface__body oracle-summary__body">
-                  <div class="oracle-summary__top"><span data-oracle-summary-mode></span><span class="surface-subtitle" data-oracle-freshness>Freshness 3s ago</span></div>
+                  <div class="oracle-summary__top"><span data-oracle-summary-mode></span><span class="surface-subtitle" data-oracle-freshness>Freshness —</span></div>
                   <div class="oracle-summary__grid">
-                    <div class="summary-metric"><span class="summary-metric__label">Data source</span><span class="summary-metric__value"><strong data-oracle-summary="source">Data912</strong></span></div>
-                    <div class="summary-metric"><span class="summary-metric__label">EMA</span><span class="summary-metric__value"><strong data-oracle-summary="ema">$42.301</strong></span></div>
-                    <div class="summary-metric"><span class="summary-metric__label">Breaker</span><span class="summary-metric__value"><strong data-oracle-summary="breaker">CLEAR</strong></span></div>
+                    <div class="summary-metric"><span class="summary-metric__label">Data source</span><span class="summary-metric__value"><strong data-oracle-summary="source">—</strong></span></div>
+                    <div class="summary-metric"><span class="summary-metric__label">EMA</span><span class="summary-metric__value"><strong data-oracle-summary="ema">—</strong></span></div>
+                    <div class="summary-metric"><span class="summary-metric__label">Breaker</span><span class="summary-metric__value"><strong data-oracle-summary="breaker">—</strong></span></div>
                   </div>
                   <a class="oracle-summary__link" href="oracle/oracle.html">View Oracle <span class="icon-slot" data-icon="arrow"></span></a>
                   <div data-oracle-summary-notice hidden></div>
