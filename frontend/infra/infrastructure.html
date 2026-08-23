@@ -47,28 +47,6 @@
             <div class="page-header__meta"><span data-page-mode></span><span data-page-status></span></div>
           </header>
           <div data-infra-notice hidden></div>
-          <div class="infra-hero">
-            <section class="surface infra-diagram" aria-labelledby="architecture-title">
-              <div class="surface__header"><div><h2 class="surface-title">Architecture map</h2><p class="surface-subtitle">The Oracle Engine publishes to two independent on-chain destinations</p></div></div>
-              <div class="infra-diagram__body">
-                <div class="diagram-canvas" id="architecture-title">
-                  <div class="diagram-node diagram-node--root"><div><strong>AUSTRAL.FI</strong><span>product layer</span></div></div>
-                  <div class="diagram-node diagram-node--engine"><div><strong>ORACLE ENGINE</strong><span>price publication</span></div></div>
-                  <div class="diagram-node diagram-node--hip"><div><strong>HIP-3</strong><span>arg / publisher</span></div></div>
-                  <div class="diagram-node diagram-node--core"><div><strong>HYPERCORE</strong><span>YPF-PERP</span></div></div>
-                  <div class="diagram-node diagram-node--asset"><div><strong>ASSETORACLE</strong><span>price mirror</span></div></div>
-                  <div class="diagram-node diagram-node--evm"><div><strong>HYPEREVM</strong><span>auditable mirror</span></div></div>
-                  <span class="diagram-connector diagram-connector--root" aria-hidden="true"></span>
-                  <span class="diagram-connector diagram-connector--left diagram-connector--arrow-left" aria-hidden="true"></span>
-                  <span class="diagram-connector diagram-connector--right diagram-connector--arrow-right" aria-hidden="true"></span>
-                  <span class="diagram-connector diagram-connector--core" aria-hidden="true"></span>
-                  <span class="diagram-connector diagram-connector--evm" aria-hidden="true"></span>
-                </div>
-                <p class="diagram-caption">AssetOracle is an auditable HyperEVM mirror. It is not represented as the direct feed consumed by HyperCore.</p>
-              </div>
-            </section>
-            <aside class="surface infra-intro"><div><span class="infra-intro__number">02</span><h2>Two delivery paths</h2><p>The Oracle Engine is the source of truth for both branches. HyperCore hosts the perpetual market path; HyperEVM mirrors the published value through AssetOracle.</p></div><div class="infra-intro__legend"><div class="legend-status"><span class="legend-status__marker"></span>Market delivery: HIP-3 → HyperCore</div><div class="legend-status"><span class="legend-status__marker legend-status__marker--amber"></span>Audit mirror: AssetOracle → HyperEVM</div></div></aside>
-          </div>
           <div class="infra-flow"><span class="infra-flow__label">Data flow</span><span class="infra-flow__path">Data912</span><span class="infra-flow__line"></span><span class="infra-flow__path">Oracle Engine</span><span class="infra-flow__line"></span><span class="infra-flow__path">HIP-3 / HyperCore</span><span class="infra-flow__line"></span><span class="infra-flow__path">AssetOracle / HyperEVM</span></div>
           <section aria-labelledby="components-title"><div class="surface__header surface__header--no-border"><div><h2 class="surface-title" id="components-title">Infrastructure components</h2><p class="surface-subtitle">Operational identity and status are separate from the market status.</p></div></div><div class="infra-cards">
             <article class="infra-card infra-card--source"><div class="infra-card__top"><div><h2>Data912</h2><p class="infra-card__tag">Data source</p></div><span data-infra-status="source">—</span></div><ul class="infra-card__list"><li>YPF ADR</li><li>YPFD BYMA</li><li>CCL</li></ul><div class="infra-card__footer"><span>Oracle input</span><span data-infra-origin="source">—</span></div></article>
